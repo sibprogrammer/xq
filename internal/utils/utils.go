@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/xml"
 	"fmt"
+	"github.com/antchfx/xmlquery"
 	"github.com/fatih/color"
 	"strings"
 )
@@ -62,6 +63,21 @@ func FormatXml(str string) string {
 			hasContent = false
 		default:
 		}
+	}
+
+	return result.String()
+}
+
+func XPathQuery(str string, query string) string {
+	result := new(strings.Builder)
+
+	doc, err := xmlquery.Parse(strings.NewReader(str))
+	if err != nil {
+		panic(err)
+	}
+
+	for _, n := range xmlquery.Find(doc, query) {
+		_, _ = fmt.Fprintf(result, "%s\n", n.InnerText())
 	}
 
 	return result.String()

@@ -15,6 +15,8 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		var bytes []byte
 		var err error
+		query, _ := cmd.Flags().GetString("xpath")
+
 
 		if len(args) == 0 {
 			fileInfo, _ := os.Stdin.Stat()
@@ -30,14 +32,20 @@ var rootCmd = &cobra.Command{
 		}
 
 		if err != nil {
-			log.Fatal("Unable to read the input from stdin:", err)
+			log.Fatal("Unable to read the input:", err)
 		}
 
-		fmt.Println(utils.FormatXml(string(bytes)))
+		if query != "" {
+			fmt.Print(utils.XPathQuery(string(bytes), query))
+		} else {
+			fmt.Println(utils.FormatXml(string(bytes)))
+		}
 	},
 }
 
 func Execute() {
+	rootCmd.PersistentFlags().StringP("xpath", "x", "", "Extract the node(s) from XML")
+
 	if err := rootCmd.Execute(); err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
