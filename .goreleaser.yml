@@ -1,0 +1,15 @@
+project_name: xq
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Tag }}"
+changelog:
+  filters:
+    exclude:
+      - '^TECH'

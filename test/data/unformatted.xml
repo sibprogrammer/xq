@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<user status="active"><!-- This is not a real user. -->
+<first_name>John</first_name><last_name>Smith</last_name><address>
+<street>1234 Main Road</street><city>Bellville</city></address></user>
