@@ -46,10 +46,13 @@ func Xml(str string) string {
 			_, _ = fmt.Fprint(result, str)
 			hasContent = str != ""
 		case xml.Comment:
-			if !hasContent {
+			if !hasContent && level > 0 {
 				_, _ = fmt.Fprint(result, "\n", strings.Repeat("  ", level))
 			}
 			_, _ = fmt.Fprint(result, commentColor("<!--" + string(typedToken) + "-->"))
+			if level == 0 {
+				fmt.Fprint(result, "\n")
+			}
 		case xml.EndElement:
 			level--
 			if !hasContent {
