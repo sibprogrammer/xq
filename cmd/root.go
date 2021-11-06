@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/sibprogrammer/xq/internal/format"
+	"github.com/sibprogrammer/xq/internal/utils"
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"log"
@@ -33,7 +33,7 @@ var rootCmd = &cobra.Command{
 			log.Fatal("Unable to read the input from stdin:", err)
 		}
 
-		fmt.Println(format.Xml(string(bytes)))
+		fmt.Println(utils.FormatXml(string(bytes)))
 	},
 }
 

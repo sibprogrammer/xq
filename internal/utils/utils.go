@@ -1,4 +1,4 @@
-package format
+package utils
 
 import (
 	"encoding/xml"
@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func Xml(str string) string {
+func FormatXml(str string) string {
 	decoder := xml.NewDecoder(strings.NewReader(str))
 	level := 0
 	hasContent := false
