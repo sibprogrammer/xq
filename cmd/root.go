@@ -13,14 +13,22 @@ var rootCmd = &cobra.Command{
 	Use: "xq",
 	Short: "An XML prettier and content extractor",
 	Run: func(cmd *cobra.Command, args []string) {
-		fileInfo, _ := os.Stdin.Stat()
+		var bytes []byte
+		var err error
 
-		if (fileInfo.Mode() & os.ModeCharDevice) != 0 {
-			_ = cmd.Help()
-			return
+		if len(args) == 0 {
+			fileInfo, _ := os.Stdin.Stat()
+
+			if (fileInfo.Mode() & os.ModeCharDevice) != 0 {
+				_ = cmd.Help()
+				return
+			}
+
+			bytes, err = ioutil.ReadAll(os.Stdin)
+		} else {
+			bytes, err = ioutil.ReadFile(args[len(args)-1])
 		}
 
-		bytes, err := ioutil.ReadAll(os.Stdin)
 		if err != nil {
 			log.Fatal("Unable to read the input from stdin:", err)
 		}
