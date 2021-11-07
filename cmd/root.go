@@ -14,7 +14,7 @@ var Version string
 
 var rootCmd = &cobra.Command{
 	Use: "xq",
-	Short: "An XML prettier and content extractor",
+	Short: "Command line XML beautifier and content extractor",
 	Run: func(cmd *cobra.Command, args []string) {
 		var bytes []byte
 		var err error
