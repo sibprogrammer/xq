@@ -2,6 +2,8 @@
 
 Command line XML beautifier and content extractor. Similar to jq.
 
+![xq](./assets/images/screenshot.png?raw=true)
+
 # Features
 
 * Syntax highlighting
