@@ -9,6 +9,9 @@ import (
 	"os"
 )
 
+// Version information
+var Version string
+
 var rootCmd = &cobra.Command{
 	Use: "xq",
 	Short: "An XML prettier and content extractor",
@@ -44,6 +47,7 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
+	rootCmd.Version = Version
 	rootCmd.PersistentFlags().StringP("xpath", "x", "", "Extract the node(s) from XML")
 
 	if err := rootCmd.Execute(); err != nil {
