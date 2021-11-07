@@ -6,6 +6,7 @@ Command line XML beautifier and content extractor. Similar to jq.
 
 * Syntax highlighting
 * Automatic indentation
+* Node content extraction
 
 # Installation
 
