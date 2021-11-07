@@ -12,6 +12,7 @@ ARCHIVE="${BINARY}_${LATEST_VERSION}_${PLATFORM}_${ARCH}.tar.gz"
 URL="$URL_PREFIX/releases/download/v${LATEST_VERSION}/$ARCHIVE"
 
 echo "Installation of $BINARY"
-curl -sSL "$URL" | tar xz - -C $INSTALL_DIR $BINARY
+rm -f $INSTALL_DIR$BINARY
+curl -sSL "$URL" | tar xz -C $INSTALL_DIR $BINARY
 chmod +x $INSTALL_DIR$BINARY
 echo "Successfully installed at $INSTALL_DIR$BINARY"
