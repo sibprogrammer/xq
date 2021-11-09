@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"github.com/antchfx/xmlquery"
 	"github.com/fatih/color"
+	"log"
+	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -81,4 +84,23 @@ func XPathQuery(str string, query string) string {
 	}
 
 	return result.String()
+}
+
+func PagerPrint(str string) {
+	pager := os.Getenv("PAGER")
+
+	if pager != "less" {
+		fmt.Println(str)
+		return
+	}
+
+	cmd := exec.Command(pager, "--quit-if-one-screen", "--no-init")
+	cmd.Stdin = strings.NewReader(str)
+	cmd.Stdout = os.Stdout
+
+	err := cmd.Run()
+
+	if err != nil {
+		log.Fatal("Failed to run the pager:", err)
+	}
 }

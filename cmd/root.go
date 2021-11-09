@@ -41,7 +41,7 @@ var rootCmd = &cobra.Command{
 		if query != "" {
 			fmt.Print(utils.XPathQuery(string(bytes), query))
 		} else {
-			fmt.Println(utils.FormatXml(string(bytes)))
+			utils.PagerPrint(utils.FormatXml(string(bytes)))
 		}
 	},
 }
