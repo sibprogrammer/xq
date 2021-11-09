@@ -5,6 +5,8 @@ builds:
     goos:
       - linux
       - darwin
+    hooks:
+      post: ./scripts/upx.sh
 checksum:
   name_template: 'checksums.txt'
 snapshot:
