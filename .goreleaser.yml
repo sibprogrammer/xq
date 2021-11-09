@@ -6,7 +6,7 @@ builds:
       - linux
       - darwin
     hooks:
-      post: ./scripts/upx.sh
+      post: upx --best --lzma "{{ .Path }}"
 checksum:
   name_template: 'checksums.txt'
 snapshot:
