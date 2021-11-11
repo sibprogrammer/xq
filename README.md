@@ -16,12 +16,12 @@ A simple way to install the utility is to use the curl and bash installer.
 
 For macOS:
 ```
-curl -sSL https://git.io/JXZHK | bash
+curl -sSL https://git.io/install-xq | bash
 ```
 
 For Linux:
 ```
-curl -sSL https://git.io/JXZHK | sudo bash
+curl -sSL https://git.io/install-xq | sudo bash
 ```
 
 If you have Go toolchain installed, you can use the following command to install `xq`:
