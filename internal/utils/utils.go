@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"github.com/antchfx/xmlquery"
 	"github.com/fatih/color"
+	"io"
 	"log"
 	"os"
 	"os/exec"
 	"strings"
 )
 
-func FormatXml(str string) string {
+func FormatXml(str string) (string, error) {
 	decoder := xml.NewDecoder(strings.NewReader(str))
 	level := 0
 	hasContent := false
@@ -22,9 +23,14 @@ func FormatXml(str string) string {
 	commentColor := color.New(color.FgHiBlue).SprintFunc()
 
 	for {
-		token, _ := decoder.Token()
-		if token == nil {
+		token, err := decoder.Token()
+
+		if err == io.EOF {
 			break
+		}
+
+		if err != nil {
+			return "", err
 		}
 
 		switch typedToken := token.(type) {
@@ -55,7 +61,7 @@ func FormatXml(str string) string {
 			}
 			_, _ = fmt.Fprint(result, commentColor("<!--" + string(typedToken) + "-->"))
 			if level == 0 {
-				fmt.Fprint(result, "\n")
+				_, _ = fmt.Fprint(result, "\n")
 			}
 		case xml.EndElement:
 			level--
@@ -68,22 +74,22 @@ func FormatXml(str string) string {
 		}
 	}
 
-	return result.String()
+	return result.String(), nil
 }
 
-func XPathQuery(str string, query string) string {
+func XPathQuery(str string, query string) (string, error) {
 	result := new(strings.Builder)
 
 	doc, err := xmlquery.Parse(strings.NewReader(str))
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
 	for _, n := range xmlquery.Find(doc, query) {
 		_, _ = fmt.Fprintf(result, "%s\n", n.InnerText())
 	}
 
-	return result.String()
+	return result.String(), nil
 }
 
 func PagerPrint(str string) {

@@ -1,11 +1,9 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/sibprogrammer/xq/internal/utils"
 	"github.com/spf13/cobra"
 	"io/ioutil"
-	"log"
 	"os"
 )
 
@@ -15,9 +13,11 @@ var Version string
 var rootCmd = &cobra.Command{
 	Use: "xq",
 	Short: "Command line XML beautifier and content extractor",
-	Run: func(cmd *cobra.Command, args []string) {
+	SilenceUsage: true,
+	RunE: func(cmd *cobra.Command, args []string) error {
 		var bytes []byte
 		var err error
+		var result string
 		query, _ := cmd.Flags().GetString("xpath")
 
 
@@ -26,7 +26,7 @@ var rootCmd = &cobra.Command{
 
 			if (fileInfo.Mode() & os.ModeCharDevice) != 0 {
 				_ = cmd.Help()
-				return
+				return nil
 			}
 
 			bytes, err = ioutil.ReadAll(os.Stdin)
@@ -35,14 +35,21 @@ var rootCmd = &cobra.Command{
 		}
 
 		if err != nil {
-			log.Fatal("Unable to read the input:", err)
+			return err
 		}
 
 		if query != "" {
-			fmt.Print(utils.XPathQuery(string(bytes), query))
+			result, err = utils.XPathQuery(string(bytes), query)
 		} else {
-			utils.PagerPrint(utils.FormatXml(string(bytes)))
+			result, err = utils.FormatXml(string(bytes))
 		}
+
+		if err != nil {
+			return err
+		}
+
+		utils.PagerPrint(result)
+		return nil
 	},
 }
 
@@ -51,7 +58,6 @@ func Execute() {
 	rootCmd.PersistentFlags().StringP("xpath", "x", "", "Extract the node(s) from XML")
 
 	if err := rootCmd.Execute(); err != nil {
-		_, _ = fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
