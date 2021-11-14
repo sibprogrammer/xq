@@ -17,6 +17,8 @@ func FormatXml(str string) (string, error) {
 	level := 0
 	hasContent := false
 	result := new(strings.Builder)
+	nsAliases := map[string]string{}
+	lastTagName := ""
 
 	tagColor := color.New(color.FgYellow).SprintFunc()
 	attrColor := color.New(color.FgGreen).SprintFunc()
@@ -42,13 +44,18 @@ func FormatXml(str string) (string, error) {
 			}
 			var attrs []string
 			for _, attr := range typedToken.Attr {
-				attrs = append(attrs, attr.Name.Local + attrColor("=\"" + attr.Value + "\""))
+				if attr.Name.Space == "xmlns" {
+					nsAliases[attr.Value] = attr.Name.Local
+				}
+				attrs = append(attrs, getTokenFullName(attr.Name, nsAliases) + attrColor("=\"" + attr.Value + "\""))
 			}
 			attrsStr := strings.Join(attrs, " ")
 			if attrsStr != "" {
 				attrsStr = " " + attrsStr
 			}
-			_, _ = fmt.Fprint(result, tagColor("<" + typedToken.Name.Local) + attrsStr + tagColor(">"))
+			currentTagName := getTokenFullName(typedToken.Name, nsAliases)
+			_, _ = fmt.Fprint(result, tagColor("<" + currentTagName) + attrsStr + tagColor(">"))
+			lastTagName = currentTagName
 			level++
 		case xml.CharData:
 			str := string(typedToken)
@@ -65,11 +72,21 @@ func FormatXml(str string) (string, error) {
 			}
 		case xml.EndElement:
 			level--
+			currentTagName := getTokenFullName(typedToken.Name, nsAliases)
 			if !hasContent {
-				_, _ = fmt.Fprint(result, "\n", strings.Repeat("  ", level))
+				if lastTagName != currentTagName {
+					_, _ = fmt.Fprint(result, "\n", strings.Repeat("  ", level), tagColor("</"+currentTagName+">"))
+				} else {
+					str := result.String()
+					result.Reset()
+					result.WriteString(str[:len(str)-len(tagColor(">"))])
+					_, _ = fmt.Fprint(result, tagColor("/>"))
+				}
+			} else {
+				_, _ = fmt.Fprint(result, tagColor("</"+currentTagName+">"))
 			}
-			_, _ = fmt.Fprint(result, tagColor("</" + typedToken.Name.Local + ">"))
 			hasContent = false
+			lastTagName = currentTagName
 		default:
 		}
 	}
@@ -109,4 +126,16 @@ func PagerPrint(str string) {
 	if err != nil {
 		log.Fatal("Failed to run the pager:", err)
 	}
+}
+
+func getTokenFullName(name xml.Name, nsAliases map[string]string) string  {
+	result := name.Local
+	if name.Space != "" {
+		space := name.Space
+		if alias, ok := nsAliases[space]; ok {
+			space = alias
+		}
+		result = space + ":" + name.Local
+	}
+	return result
 }

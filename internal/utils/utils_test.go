@@ -3,16 +3,24 @@ package utils
 import (
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
+	"path"
 	"testing"
 )
 
 func TestFormatXml(t *testing.T) {
-	unformattedXml := fileGetContents("../../test/data/unformatted.xml")
-	expectedXml := fileGetContents("../../test/data/formatted.xml")
+	files := map[string]string{
+		"unformatted.xml":  "formatted.xml",
+		"unformatted2.xml": "formatted2.xml",
+	}
 
-	formattedXml, err := FormatXml(unformattedXml)
-	assert.Nil(t, err)
-	assert.Equal(t, expectedXml, formattedXml)
+	for unformattedFile, expectedFile := range files {
+		unformattedXml := fileGetContents(path.Join("..", "..", "test", "data", unformattedFile))
+		expectedXml := fileGetContents(path.Join("..", "..", "test", "data", expectedFile))
+
+		formattedXml, err := FormatXml(unformattedXml)
+		assert.Nil(t, err)
+		assert.Equal(t, expectedXml, formattedXml)
+	}
 }
 
 func fileGetContents(filename string) string {

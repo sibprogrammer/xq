@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iris1:request xmlns:iris1="urn:ietf:params:xml:ns:iris1">
+  <iris1:searchSet>
+    <iris1:lookupEntity registryType="dchk1" entityClass="domain-name" entityName="ficora.fi"/>
+  </iris1:searchSet>
+</iris1:request>
