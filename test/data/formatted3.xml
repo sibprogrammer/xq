@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<reg:register updateTime="2012-01-02T05:05:05" xmlns:reg="http://rsoc.ru">
+  <content id="1" includeTime="2012-01-01T01:01:01">
+    <decision date="2012-01-01" number="Решение  N  1" org="ФОИВ N 1"/>
+    <url>http://site1.ru/page1.html</url>
+    <ip>1.1.1.1</ip>
+  </content>
+  <content id="2" includeTime="2012-02-02T01:01:01">
+    <decision date="2012-01-01" number="Решение N 2" org="ФОИВ N 2"/>
+    <domain>site2.ru</domain>
+    <ip>2.2.2.2</ip>
+    <ip>3.3.3.3</ip>
+  </content>
+</reg:register>

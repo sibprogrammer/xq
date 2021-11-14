@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/antchfx/xmlquery"
 	"github.com/fatih/color"
+	"golang.org/x/text/encoding/ianaindex"
+	"golang.org/x/text/transform"
 	"io"
 	"log"
 	"os"
@@ -14,6 +16,14 @@ import (
 
 func FormatXml(str string) (string, error) {
 	decoder := xml.NewDecoder(strings.NewReader(str))
+	decoder.CharsetReader = func(charset string, input io.Reader) (io.Reader, error) {
+		e, err := ianaindex.MIME.Encoding(charset)
+		if err != nil {
+			return nil, err
+		}
+		return transform.NewReader(input, e.NewDecoder()), nil
+	}
+
 	level := 0
 	hasContent := false
 	result := new(strings.Builder)
