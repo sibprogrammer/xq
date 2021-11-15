@@ -57,6 +57,9 @@ func FormatXml(str string) (string, error) {
 				if attr.Name.Space == "xmlns" {
 					nsAliases[attr.Value] = attr.Name.Local
 				}
+				if attr.Name.Local == "xmlns" {
+					nsAliases[attr.Value] = ""
+				}
 				attrs = append(attrs, getTokenFullName(attr.Name, nsAliases) + attrColor("=\"" + attr.Value + "\""))
 			}
 			attrsStr := strings.Join(attrs, " ")
@@ -145,7 +148,9 @@ func getTokenFullName(name xml.Name, nsAliases map[string]string) string  {
 		if alias, ok := nsAliases[space]; ok {
 			space = alias
 		}
-		result = space + ":" + name.Local
+		if space != "" {
+			result = space + ":" + name.Local
+		}
 	}
 	return result
 }

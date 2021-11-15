@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<psalm
+    xmlns="https://getpsalm.org/schema/config"
+    name="Psalm for Psalm"
+>
+    <stubs>
+        <file name="stubs/phpparser.phpstub"/>
+    </stubs>
+</psalm>
