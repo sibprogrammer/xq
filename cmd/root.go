@@ -11,15 +11,14 @@ import (
 var Version string
 
 var rootCmd = &cobra.Command{
-	Use: "xq",
-	Short: "Command line XML beautifier and content extractor",
+	Use:          "xq",
+	Short:        "Command line XML beautifier and content extractor",
 	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var bytes []byte
 		var err error
 		var result string
 		query, _ := cmd.Flags().GetString("xpath")
-
 
 		if len(args) == 0 {
 			fileInfo, _ := os.Stdin.Stat()

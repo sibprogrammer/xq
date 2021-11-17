@@ -60,14 +60,14 @@ func FormatXml(str string) (string, error) {
 				if attr.Name.Local == "xmlns" {
 					nsAliases[attr.Value] = ""
 				}
-				attrs = append(attrs, getTokenFullName(attr.Name, nsAliases) + attrColor("=\"" + attr.Value + "\""))
+				attrs = append(attrs, getTokenFullName(attr.Name, nsAliases)+attrColor("=\""+attr.Value+"\""))
 			}
 			attrsStr := strings.Join(attrs, " ")
 			if attrsStr != "" {
 				attrsStr = " " + attrsStr
 			}
 			currentTagName := getTokenFullName(typedToken.Name, nsAliases)
-			_, _ = fmt.Fprint(result, tagColor("<" + currentTagName) + attrsStr + tagColor(">"))
+			_, _ = fmt.Fprint(result, tagColor("<"+currentTagName)+attrsStr+tagColor(">"))
 			lastTagName = currentTagName
 			level++
 		case xml.CharData:
@@ -79,7 +79,7 @@ func FormatXml(str string) (string, error) {
 			if !hasContent && level > 0 {
 				_, _ = fmt.Fprint(result, "\n", strings.Repeat("  ", level))
 			}
-			_, _ = fmt.Fprint(result, commentColor("<!--" + string(typedToken) + "-->"))
+			_, _ = fmt.Fprint(result, commentColor("<!--"+string(typedToken)+"-->"))
 			if level == 0 {
 				_, _ = fmt.Fprint(result, "\n")
 			}
@@ -141,7 +141,7 @@ func PagerPrint(str string) {
 	}
 }
 
-func getTokenFullName(name xml.Name, nsAliases map[string]string) string  {
+func getTokenFullName(name xml.Name, nsAliases map[string]string) string {
 	result := name.Local
 	if name.Space != "" {
 		space := name.Space
