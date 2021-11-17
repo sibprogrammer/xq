@@ -14,7 +14,7 @@ import (
 	"strings"
 )
 
-func FormatXml(str string) (string, error) {
+func FormatXml(str string, indent string) (string, error) {
 	decoder := xml.NewDecoder(strings.NewReader(str))
 	decoder.CharsetReader = func(charset string, input io.Reader) (io.Reader, error) {
 		e, err := ianaindex.MIME.Encoding(charset)
@@ -50,7 +50,7 @@ func FormatXml(str string) (string, error) {
 			_, _ = fmt.Fprintf(result, "%s%s %s%s\n", tagColor("<?"), typedToken.Target, string(typedToken.Inst), tagColor("?>"))
 		case xml.StartElement:
 			if level > 0 {
-				_, _ = fmt.Fprint(result, "\n", strings.Repeat("  ", level))
+				_, _ = fmt.Fprint(result, "\n", strings.Repeat(indent, level))
 			}
 			var attrs []string
 			for _, attr := range typedToken.Attr {
@@ -77,7 +77,7 @@ func FormatXml(str string) (string, error) {
 			hasContent = str != ""
 		case xml.Comment:
 			if !hasContent && level > 0 {
-				_, _ = fmt.Fprint(result, "\n", strings.Repeat("  ", level))
+				_, _ = fmt.Fprint(result, "\n", strings.Repeat(indent, level))
 			}
 			_, _ = fmt.Fprint(result, commentColor("<!--"+string(typedToken)+"-->"))
 			if level == 0 {
@@ -88,7 +88,7 @@ func FormatXml(str string) (string, error) {
 			currentTagName := getTokenFullName(typedToken.Name, nsAliases)
 			if !hasContent {
 				if lastTagName != currentTagName {
-					_, _ = fmt.Fprint(result, "\n", strings.Repeat("  ", level), tagColor("</"+currentTagName+">"))
+					_, _ = fmt.Fprint(result, "\n", strings.Repeat(indent, level), tagColor("</"+currentTagName+">"))
 				} else {
 					str := result.String()
 					result.Reset()

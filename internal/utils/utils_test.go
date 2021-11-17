@@ -19,7 +19,7 @@ func TestFormatXml(t *testing.T) {
 		unformattedXml := fileGetContents(path.Join("..", "..", "test", "data", unformattedFile))
 		expectedXml := fileGetContents(path.Join("..", "..", "test", "data", expectedFile))
 
-		formattedXml, err := FormatXml(unformattedXml)
+		formattedXml, err := FormatXml(unformattedXml, "  ")
 		assert.Nil(t, err)
 		assert.Equal(t, expectedXml, formattedXml)
 	}
