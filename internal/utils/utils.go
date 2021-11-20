@@ -8,14 +8,13 @@ import (
 	"golang.org/x/text/encoding/ianaindex"
 	"golang.org/x/text/transform"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"strings"
 )
 
-func FormatXml(str string, indent string) (string, error) {
-	decoder := xml.NewDecoder(strings.NewReader(str))
+func FormatXml(reader io.Reader, writer io.Writer, indent string) error {
+	decoder := xml.NewDecoder(reader)
 	decoder.CharsetReader = func(charset string, input io.Reader) (io.Reader, error) {
 		e, err := ianaindex.MIME.Encoding(charset)
 		if err != nil {
@@ -26,9 +25,9 @@ func FormatXml(str string, indent string) (string, error) {
 
 	level := 0
 	hasContent := false
-	result := new(strings.Builder)
 	nsAliases := map[string]string{}
 	lastTagName := ""
+	startTagClosed := true
 
 	tagColor := color.New(color.FgYellow).SprintFunc()
 	attrColor := color.New(color.FgGreen).SprintFunc()
@@ -42,15 +41,19 @@ func FormatXml(str string, indent string) (string, error) {
 		}
 
 		if err != nil {
-			return "", err
+			return err
 		}
 
 		switch typedToken := token.(type) {
 		case xml.ProcInst:
-			_, _ = fmt.Fprintf(result, "%s%s %s%s\n", tagColor("<?"), typedToken.Target, string(typedToken.Inst), tagColor("?>"))
+			_, _ = fmt.Fprintf(writer, "%s%s %s%s\n", tagColor("<?"), typedToken.Target, string(typedToken.Inst), tagColor("?>"))
 		case xml.StartElement:
+			if !startTagClosed {
+				_, _ = fmt.Fprint(writer, tagColor(">"))
+				startTagClosed = true
+			}
 			if level > 0 {
-				_, _ = fmt.Fprint(result, "\n", strings.Repeat(indent, level))
+				_, _ = fmt.Fprint(writer, "\n", strings.Repeat(indent, level))
 			}
 			var attrs []string
 			for _, attr := range typedToken.Attr {
@@ -67,36 +70,47 @@ func FormatXml(str string, indent string) (string, error) {
 				attrsStr = " " + attrsStr
 			}
 			currentTagName := getTokenFullName(typedToken.Name, nsAliases)
-			_, _ = fmt.Fprint(result, tagColor("<"+currentTagName)+attrsStr+tagColor(">"))
+			_, _ = fmt.Fprint(writer, tagColor("<"+currentTagName)+attrsStr)
 			lastTagName = currentTagName
+			startTagClosed = false
 			level++
 		case xml.CharData:
 			str := string(typedToken)
 			str = strings.TrimSpace(str)
-			_, _ = fmt.Fprint(result, str)
 			hasContent = str != ""
-		case xml.Comment:
-			if !hasContent && level > 0 {
-				_, _ = fmt.Fprint(result, "\n", strings.Repeat(indent, level))
+			if hasContent && !startTagClosed {
+				_, _ = fmt.Fprint(writer, tagColor(">"))
+				startTagClosed = true
 			}
-			_, _ = fmt.Fprint(result, commentColor("<!--"+string(typedToken)+"-->"))
+			_, _ = fmt.Fprint(writer, str)
+		case xml.Comment:
+			if !startTagClosed {
+				_, _ = fmt.Fprint(writer, tagColor(">"))
+				startTagClosed = true
+			}
+			if !hasContent && level > 0 {
+				_, _ = fmt.Fprint(writer, "\n", strings.Repeat(indent, level))
+			}
+			_, _ = fmt.Fprint(writer, commentColor("<!--"+string(typedToken)+"-->"))
 			if level == 0 {
-				_, _ = fmt.Fprint(result, "\n")
+				_, _ = fmt.Fprint(writer, "\n")
 			}
 		case xml.EndElement:
 			level--
 			currentTagName := getTokenFullName(typedToken.Name, nsAliases)
 			if !hasContent {
 				if lastTagName != currentTagName {
-					_, _ = fmt.Fprint(result, "\n", strings.Repeat(indent, level), tagColor("</"+currentTagName+">"))
+					if !startTagClosed {
+						_, _ = fmt.Fprint(writer, tagColor(">"))
+						startTagClosed = true
+					}
+					_, _ = fmt.Fprint(writer, "\n", strings.Repeat(indent, level), tagColor("</"+currentTagName+">"))
 				} else {
-					str := result.String()
-					result.Reset()
-					result.WriteString(str[:len(str)-len(tagColor(">"))])
-					_, _ = fmt.Fprint(result, tagColor("/>"))
+					_, _ = fmt.Fprint(writer, tagColor("/>"))
+					startTagClosed = true
 				}
 			} else {
-				_, _ = fmt.Fprint(result, tagColor("</"+currentTagName+">"))
+				_, _ = fmt.Fprint(writer, tagColor("</"+currentTagName+">"))
 			}
 			hasContent = false
 			lastTagName = currentTagName
@@ -104,41 +118,37 @@ func FormatXml(str string, indent string) (string, error) {
 		}
 	}
 
-	return result.String(), nil
+	_, _ = fmt.Fprint(writer, "\n")
+
+	return nil
 }
 
-func XPathQuery(str string, query string) (string, error) {
-	result := new(strings.Builder)
-
-	doc, err := xmlquery.Parse(strings.NewReader(str))
+func XPathQuery(reader io.Reader, writer io.Writer, query string) error {
+	doc, err := xmlquery.Parse(reader)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	for _, n := range xmlquery.Find(doc, query) {
-		_, _ = fmt.Fprintf(result, "%s\n", n.InnerText())
+		_, _ = fmt.Fprintf(writer, "%s\n", n.InnerText())
 	}
 
-	return result.String(), nil
+	return nil
 }
 
-func PagerPrint(str string) {
+func PagerPrint(reader io.Reader) error {
 	pager := os.Getenv("PAGER")
 
 	if pager != "less" {
-		fmt.Println(str)
-		return
+		_, err := io.Copy(os.Stdout, reader)
+		return err
 	}
 
 	cmd := exec.Command(pager, "--quit-if-one-screen", "--no-init")
-	cmd.Stdin = strings.NewReader(str)
+	cmd.Stdin = reader
 	cmd.Stdout = os.Stdout
 
-	err := cmd.Run()
-
-	if err != nil {
-		log.Fatal("Failed to run the pager:", err)
-	}
+	return cmd.Run()
 }
 
 func getTokenFullName(name xml.Name, nsAliases map[string]string) string {

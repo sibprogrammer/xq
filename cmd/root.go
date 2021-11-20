@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"github.com/sibprogrammer/xq/internal/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 )
@@ -18,12 +19,11 @@ var rootCmd = &cobra.Command{
 	Short:        "Command line XML beautifier and content extractor",
 	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		var bytes []byte
 		var err error
-		var result string
-		query, _ := cmd.Flags().GetString("xpath")
+		var reader io.Reader
+		var indent string
 
-		indent, err := getIndent(cmd.Flags())
+		indent, err = getIndent(cmd.Flags())
 		if err != nil {
 			return err
 		}
@@ -36,27 +36,34 @@ var rootCmd = &cobra.Command{
 				return nil
 			}
 
-			bytes, err = ioutil.ReadAll(os.Stdin)
+			reader = os.Stdin
 		} else {
-			bytes, err = ioutil.ReadFile(args[len(args)-1])
+			reader, err = os.Open(args[len(args)-1])
+
+			if err != nil {
+				return err
+			}
 		}
 
-		if err != nil {
-			return err
-		}
+		query, _ := cmd.Flags().GetString("xpath")
+		pr, pw := io.Pipe()
 
-		if query != "" {
-			result, err = utils.XPathQuery(string(bytes), query)
-		} else {
-			result, err = utils.FormatXml(string(bytes), indent)
-		}
+		go func() {
+			defer pw.Close()
 
-		if err != nil {
-			return err
-		}
+			if query != "" {
+				err = utils.XPathQuery(reader, pw, query)
+			} else {
+				err = utils.FormatXml(reader, pw, indent)
+			}
 
-		utils.PagerPrint(result)
-		return nil
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+		}()
+
+		return utils.PagerPrint(pr)
 	},
 }
 

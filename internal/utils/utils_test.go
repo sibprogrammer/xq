@@ -2,8 +2,11 @@ package utils
 
 import (
 	"github.com/stretchr/testify/assert"
+	"io"
 	"io/ioutil"
+	"os"
 	"path"
+	"strings"
 	"testing"
 )
 
@@ -16,21 +19,25 @@ func TestFormatXml(t *testing.T) {
 	}
 
 	for unformattedFile, expectedFile := range files {
-		unformattedXml := fileGetContents(path.Join("..", "..", "test", "data", unformattedFile))
-		expectedXml := fileGetContents(path.Join("..", "..", "test", "data", expectedFile))
+		unformattedXmlReader := getFileReader(path.Join("..", "..", "test", "data", unformattedFile))
 
-		formattedXml, err := FormatXml(unformattedXml, "  ")
-		assert.Nil(t, err)
-		assert.Equal(t, expectedXml, formattedXml)
+		bytes, readErr := ioutil.ReadFile(path.Join("..", "..", "test", "data", expectedFile))
+		assert.Nil(t, readErr)
+		expectedXml := string(bytes)
+
+		output := new(strings.Builder)
+		formatErr := FormatXml(unformattedXmlReader, output, "  ")
+		assert.Nil(t, formatErr)
+		assert.Equal(t, expectedXml, output.String())
 	}
 }
 
-func fileGetContents(filename string) string {
-	bytes, err := ioutil.ReadFile(filename)
+func getFileReader(filename string) io.Reader {
+	reader, err := os.Open(filename)
 
 	if err != nil {
 		panic(err)
 	}
 
-	return string(bytes)
+	return reader
 }
