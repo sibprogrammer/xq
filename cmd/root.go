@@ -23,8 +23,7 @@ var rootCmd = &cobra.Command{
 		var reader io.Reader
 		var indent string
 
-		indent, err = getIndent(cmd.Flags())
-		if err != nil {
+		if indent, err = getIndent(cmd.Flags()); err != nil {
 			return err
 		}
 
@@ -38,9 +37,7 @@ var rootCmd = &cobra.Command{
 
 			reader = os.Stdin
 		} else {
-			reader, err = os.Open(args[len(args)-1])
-
-			if err != nil {
+			if reader, err = os.Open(args[len(args)-1]); err != nil {
 				return err
 			}
 		}
@@ -84,8 +81,7 @@ func getIndent(flags *pflag.FlagSet) (string, error) {
 	var tabIndent bool
 	var err error
 
-	indentWidth, err = flags.GetInt("indent")
-	if err != nil {
+	if indentWidth, err = flags.GetInt("indent"); err != nil {
 		return "", err
 	}
 	if indentWidth < 1 || indentWidth > 8 {
@@ -94,8 +90,7 @@ func getIndent(flags *pflag.FlagSet) (string, error) {
 
 	indent := strings.Repeat(" ", indentWidth)
 
-	tabIndent, err = flags.GetBool("tab")
-	if err != nil {
+	if tabIndent, err = flags.GetBool("tab"); err != nil {
 		return "", err
 	}
 
