@@ -6,6 +6,7 @@ import (
 	"github.com/sibprogrammer/xq/internal/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 	"io"
 	"os"
 	"strings"
@@ -65,11 +66,16 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
+	if err := initViper(); err != nil {
+		fmt.Printf("Error while reading the config file: %v\n", err)
+		os.Exit(1)
+	}
+
 	rootCmd.Version = Version
 
 	rootCmd.PersistentFlags().StringP("xpath", "x", "", "Extract the node(s) from XML")
-	rootCmd.PersistentFlags().Bool("tab", false, "Use tabs for indentation")
-	rootCmd.PersistentFlags().Int("indent", 2, "Use the given number of spaces for indentation")
+	rootCmd.PersistentFlags().Bool("tab", viper.GetBool("tab"), "Use tabs for indentation")
+	rootCmd.PersistentFlags().Int("indent", viper.GetInt("indent"), "Use the given number of spaces for indentation")
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
@@ -99,4 +105,22 @@ func getIndent(flags *pflag.FlagSet) (string, error) {
 	}
 
 	return indent, nil
+}
+
+func initViper() error {
+	viper.SetConfigName(".xq")
+	viper.SetConfigType("env")
+	viper.AddConfigPath("$HOME")
+	viper.AddConfigPath(".")
+
+	viper.SetDefault("indent", 2)
+	viper.SetDefault("tab", false)
+
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			return err
+		}
+	}
+
+	return nil
 }
