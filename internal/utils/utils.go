@@ -51,7 +51,7 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string) error {
 			attrsMap := getPIAttrs(string(typedToken.Inst))
 			var attrs []string
 			for attrName, attrValue := range attrsMap {
-				attrs = append(attrs, attrName+"="+attrColor(attrValue))
+				attrs = append(attrs, attrName+attrColor("="+attrValue))
 			}
 
 			_, _ = fmt.Fprintf(writer, "%s%s\n", strings.Join(attrs, " "), tagColor("?>"))
