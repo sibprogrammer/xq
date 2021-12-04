@@ -152,7 +152,7 @@ func PagerPrint(reader io.Reader) error {
 		return err
 	}
 
-	cmd := exec.Command(pager, "--quit-if-one-screen", "--no-init")
+	cmd := exec.Command(pager, "--quit-if-one-screen", "--no-init", "--RAW-CONTROL-CHARS")
 	cmd.Stdin = reader
 	cmd.Stdout = os.Stdout
 
