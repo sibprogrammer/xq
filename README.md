@@ -58,6 +58,11 @@ For Linux:
 curl -sSL https://git.io/install-xq | sudo bash
 ```
 
+For Fedora via package manager:
+```
+dnf install xq
+```
+
 If you have Go toolchain installed, you can use the following command to install `xq`:
 ```
 go install github.com/sibprogrammer/xq@latest
