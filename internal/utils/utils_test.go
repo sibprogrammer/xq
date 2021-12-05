@@ -41,10 +41,3 @@ func getFileReader(filename string) io.Reader {
 
 	return reader
 }
-
-func TestGetPIAttrs(t *testing.T) {
-	attrs := getPIAttrs("version=\"1.0\" encoding=\"UTF-8\"")
-	assert.Len(t, attrs, 2)
-	assert.Contains(t, attrs, "version")
-	assert.Contains(t, attrs, "encoding")
-}

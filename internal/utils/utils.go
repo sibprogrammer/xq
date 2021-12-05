@@ -46,15 +46,16 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string) error {
 
 		switch typedToken := token.(type) {
 		case xml.ProcInst:
-			_, _ = fmt.Fprintf(writer, "%s%s ", tagColor("<?"), typedToken.Target)
+			_, _ = fmt.Fprintf(writer, "%s%s", tagColor("<?"), typedToken.Target)
 
-			attrsMap := getPIAttrs(string(typedToken.Inst))
-			var attrs []string
-			for attrName, attrValue := range attrsMap {
-				attrs = append(attrs, attrName+attrColor("="+attrValue))
+			pi := strings.TrimSpace(string(typedToken.Inst))
+			attrs := strings.Split(pi, " ")
+			for _, attr := range attrs {
+				attrComponents := strings.SplitN(attr, "=", 2)
+				_, _ = fmt.Fprintf(writer, " %s%s", attrComponents[0], attrColor("="+attrComponents[1]))
 			}
 
-			_, _ = fmt.Fprintf(writer, "%s%s\n", strings.Join(attrs, " "), tagColor("?>"))
+			_, _ = fmt.Fprintf(writer, "%s\n", tagColor("?>"))
 		case xml.StartElement:
 			if !startTagClosed {
 				_, _ = fmt.Fprint(writer, tagColor(">"))
@@ -169,20 +170,6 @@ func getTokenFullName(name xml.Name, nsAliases map[string]string) string {
 		if space != "" {
 			result = space + ":" + name.Local
 		}
-	}
-	return result
-}
-
-func getPIAttrs(pi string) map[string]string {
-	pi = strings.TrimSpace(pi)
-	result := make(map[string]string)
-	attrs := strings.Split(pi, " ")
-	for _, attr := range attrs {
-		if "" == strings.TrimSpace(attr) {
-			continue
-		}
-		attrComponents := strings.SplitN(attr, "=", 2)
-		result[attrComponents[0]] = attrComponents[1]
 	}
 	return result
 }
