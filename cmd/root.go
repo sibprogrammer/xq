@@ -43,14 +43,14 @@ var rootCmd = &cobra.Command{
 			}
 		}
 
-		query, _ := cmd.Flags().GetString("xpath")
+		query, singleNode := getXpathQuery(cmd.Flags())
 		pr, pw := io.Pipe()
 
 		go func() {
 			defer pw.Close()
 
 			if query != "" {
-				err = utils.XPathQuery(reader, pw, query)
+				err = utils.XPathQuery(reader, pw, query, singleNode)
 			} else {
 				err = utils.FormatXml(reader, pw, indent)
 			}
@@ -74,6 +74,7 @@ func Execute() {
 	rootCmd.Version = Version
 
 	rootCmd.PersistentFlags().StringP("xpath", "x", "", "Extract the node(s) from XML")
+	rootCmd.PersistentFlags().StringP("extract", "e", "", "Extract a single node from XML")
 	rootCmd.PersistentFlags().Bool("tab", viper.GetBool("tab"), "Use tabs for indentation")
 	rootCmd.PersistentFlags().Int("indent", viper.GetInt("indent"), "Use the given number of spaces for indentation")
 
@@ -123,4 +124,13 @@ func initViper() error {
 	}
 
 	return nil
+}
+
+func getXpathQuery(flags *pflag.FlagSet) (query string, single bool) {
+	if query, _ = flags.GetString("xpath"); query != "" {
+		return query, false
+	}
+
+	query, _ = flags.GetString("extract")
+	return query, true
 }

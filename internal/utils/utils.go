@@ -132,14 +132,20 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string) error {
 	return nil
 }
 
-func XPathQuery(reader io.Reader, writer io.Writer, query string) error {
+func XPathQuery(reader io.Reader, writer io.Writer, query string, singleNode bool) error {
 	doc, err := xmlquery.Parse(reader)
 	if err != nil {
 		return err
 	}
 
-	for _, n := range xmlquery.Find(doc, query) {
-		_, _ = fmt.Fprintf(writer, "%s\n", n.InnerText())
+	if singleNode {
+		if n := xmlquery.FindOne(doc, query); n != nil {
+			_, _ = fmt.Fprintf(writer, "%s\n", n.InnerText())
+		}
+	} else {
+		for _, n := range xmlquery.Find(doc, query) {
+			_, _ = fmt.Fprintf(writer, "%s\n", n.InnerText())
+		}
 	}
 
 	return nil
