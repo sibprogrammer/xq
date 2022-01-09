@@ -13,7 +13,13 @@ import (
 	"strings"
 )
 
-func FormatXml(reader io.Reader, writer io.Writer, indent string) error {
+const (
+	ColorsDefault = iota
+	ColorsForced
+	ColorsDisabled
+)
+
+func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) error {
 	decoder := xml.NewDecoder(reader)
 	decoder.CharsetReader = func(charset string, input io.Reader) (io.Reader, error) {
 		e, err := ianaindex.MIME.Encoding(charset)
@@ -28,6 +34,10 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string) error {
 	nsAliases := map[string]string{}
 	lastTagName := ""
 	startTagClosed := true
+
+	if ColorsDefault != colors {
+		color.NoColor = colors == ColorsDisabled
+	}
 
 	tagColor := color.New(color.FgYellow).SprintFunc()
 	attrColor := color.New(color.FgGreen).SprintFunc()

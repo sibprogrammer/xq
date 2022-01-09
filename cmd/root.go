@@ -52,7 +52,8 @@ var rootCmd = &cobra.Command{
 			if query != "" {
 				err = utils.XPathQuery(reader, pw, query, singleNode)
 			} else {
-				err = utils.FormatXml(reader, pw, indent)
+				colors := getColorMode(cmd.Flags())
+				err = utils.FormatXml(reader, pw, indent, colors)
 			}
 
 			if err != nil {
@@ -77,6 +78,8 @@ func Execute() {
 	rootCmd.PersistentFlags().StringP("extract", "e", "", "Extract a single node from XML")
 	rootCmd.PersistentFlags().Bool("tab", viper.GetBool("tab"), "Use tabs for indentation")
 	rootCmd.PersistentFlags().Int("indent", viper.GetInt("indent"), "Use the given number of spaces for indentation")
+	rootCmd.PersistentFlags().Bool("no-color", viper.GetBool("no-color"), "Disable colorful output")
+	rootCmd.PersistentFlags().BoolP("color", "c", viper.GetBool("color"), "Force colorful output")
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
@@ -116,6 +119,8 @@ func initViper() error {
 
 	viper.SetDefault("indent", 2)
 	viper.SetDefault("tab", false)
+	viper.SetDefault("no-color", false)
+	viper.SetDefault("color", false)
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
@@ -133,4 +138,20 @@ func getXpathQuery(flags *pflag.FlagSet) (query string, single bool) {
 
 	query, _ = flags.GetString("extract")
 	return query, true
+}
+
+func getColorMode(flags *pflag.FlagSet) int {
+	colors := utils.ColorsDefault
+
+	disableColors, _ := flags.GetBool("no-color")
+	if disableColors {
+		colors = utils.ColorsDisabled
+	}
+
+	forcedColors, _ := flags.GetBool("color")
+	if forcedColors {
+		colors = utils.ColorsForced
+	}
+
+	return colors
 }

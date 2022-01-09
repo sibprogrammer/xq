@@ -26,7 +26,7 @@ func TestFormatXml(t *testing.T) {
 		expectedXml := string(bytes)
 
 		output := new(strings.Builder)
-		formatErr := FormatXml(unformattedXmlReader, output, "  ")
+		formatErr := FormatXml(unformattedXmlReader, output, "  ", ColorsDisabled)
 		assert.Nil(t, formatErr)
 		assert.Equal(t, expectedXml, output.String())
 	}
