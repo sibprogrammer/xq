@@ -50,12 +50,12 @@ A simple way to install the utility is to use the curl and bash installer.
 
 For macOS:
 ```
-curl -sSL https://git.io/install-xq | bash
+curl -sSL https://bit.ly/install-xq | bash
 ```
 
 For Linux:
 ```
-curl -sSL https://git.io/install-xq | sudo bash
+curl -sSL https://bit.ly/install-xq | sudo bash
 ```
 
 For Fedora via package manager:
