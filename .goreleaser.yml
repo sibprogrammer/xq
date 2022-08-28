@@ -5,8 +5,14 @@ builds:
     goos:
       - linux
       - darwin
+    goamd64:
+      - ''
     hooks:
-      post: upx --best --lzma "{{ .Path }}"
+      post:
+        - cmd: scripts/build-hook.sh
+          env:
+            - HOOK_TARGET={{ .Target }}
+            - HOOK_PATH={{ .Path }}
 checksum:
   name_template: 'checksums.txt'
 snapshot:
