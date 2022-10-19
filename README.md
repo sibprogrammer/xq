@@ -50,7 +50,7 @@ A simple way to install the utility is to use the curl and bash installer.
 
 For macOS:
 ```
-curl -sSL https://bit.ly/install-xq | bash
+brew install xq
 ```
 
 For Linux:
