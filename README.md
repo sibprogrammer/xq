@@ -46,7 +46,7 @@ See https://en.wikipedia.org/wiki/XPath for details.
 
 # Installation
 
-A simple way to install the utility is to use the curl and bash installer.
+The preferable ways to install the utility are described below.
 
 For macOS:
 ```
