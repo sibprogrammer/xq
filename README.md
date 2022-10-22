@@ -2,7 +2,7 @@
 
 [![build](https://github.com/sibprogrammer/xq/workflows/build/badge.svg)](https://github.com/sibprogrammer/xq/actions)
 
-Command line XML beautifier and content extractor. Similar to jq.
+Command-line XML beautifier and content extractor. Similar to jq.
 
 ![xq](./assets/images/screenshot.png?raw=true)
 
