@@ -6,7 +6,10 @@ require (
 	github.com/antchfx/xmlquery v1.3.8
 	github.com/fatih/color v1.13.0
 	github.com/spf13/cobra v1.2.1
+	github.com/spf13/pflag v1.0.5
+	github.com/spf13/viper v1.9.0
 	github.com/stretchr/testify v1.7.0
+	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2
 	golang.org/x/text v0.3.7
 )
 
@@ -26,10 +29,7 @@ require (
 	github.com/spf13/afero v1.6.0 // indirect
 	github.com/spf13/cast v1.4.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/spf13/viper v1.9.0 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
-	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
 	golang.org/x/sys v0.0.0-20211117180635-dee7805ff2e1 // indirect
 	gopkg.in/ini.v1 v1.64.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

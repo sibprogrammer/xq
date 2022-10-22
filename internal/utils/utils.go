@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/antchfx/xmlquery"
 	"github.com/fatih/color"
+	"golang.org/x/net/html"
 	"golang.org/x/text/encoding/ianaindex"
 	"golang.org/x/text/transform"
 	"io"
@@ -161,6 +162,103 @@ func XPathQuery(reader io.Reader, writer io.Writer, query string, singleNode boo
 	return nil
 }
 
+func FormatHtml(reader io.Reader, writer io.Writer, indent string, colors int) error {
+	tokenizer := html.NewTokenizer(reader)
+
+	if ColorsDefault != colors {
+		color.NoColor = colors == ColorsDisabled
+	}
+
+	tagColor := color.New(color.FgYellow).SprintFunc()
+	attrColor := color.New(color.FgGreen).SprintFunc()
+	commentColor := color.New(color.FgHiBlue).SprintFunc()
+
+	level := 0
+	hasContent := false
+	selfClosingTags := getSelfClosingTags()
+
+	for {
+		token := tokenizer.Next()
+
+		if token == html.ErrorToken {
+			err := tokenizer.Err()
+			if err == io.EOF {
+				break
+			}
+			return err
+		}
+
+		switch token {
+		case html.TextToken:
+			str := string(tokenizer.Text())
+			str = strings.TrimSpace(str)
+			hasContent = str != ""
+			_, _ = fmt.Fprint(writer, str)
+		case html.StartTagToken, html.SelfClosingTagToken:
+			if level > 0 {
+				_, _ = fmt.Fprint(writer, "\n", strings.Repeat(indent, level))
+			}
+
+			tagName, hasAttr := tokenizer.TagName()
+			selfClosingTag := token == html.SelfClosingTagToken
+
+			if !selfClosingTag && selfClosingTags[string(tagName)] {
+				selfClosingTag = true
+			}
+
+			var attrs []string
+			attrsStr := ""
+
+			if hasAttr {
+				for {
+					attrKey, attrValue, moreAttr := tokenizer.TagAttr()
+					attrs = append(attrs, string(attrKey)+attrColor("=\""+string(attrValue)+"\""))
+					if !moreAttr {
+						break
+					}
+				}
+
+				attrsStr = " " + strings.Join(attrs, " ")
+			}
+
+			_, _ = fmt.Fprint(writer, tagColor("<"+string(tagName))+attrsStr)
+
+			if selfClosingTag {
+				_, _ = fmt.Fprint(writer, tagColor("/>"))
+			} else {
+				level++
+				_, _ = fmt.Fprint(writer, tagColor(">"))
+			}
+		case html.EndTagToken:
+			level--
+			tagName, _ := tokenizer.TagName()
+
+			if !hasContent {
+				_, _ = fmt.Fprint(writer, "\n", strings.Repeat(indent, level))
+			}
+			_, _ = fmt.Fprint(writer, tagColor("</"+string(tagName)+">"))
+
+			hasContent = false
+		case html.DoctypeToken:
+			docType := tokenizer.Text()
+			_, _ = fmt.Fprintf(writer, "%s%s%s\n", tagColor("<!doctype "), string(docType), tagColor(">"))
+		case html.CommentToken:
+			comment := tokenizer.Text()
+			if !hasContent && level > 0 {
+				_, _ = fmt.Fprint(writer, "\n", strings.Repeat(indent, level))
+			}
+			_, _ = fmt.Fprint(writer, commentColor("<!--"+string(comment)+"-->"))
+			if level == 0 {
+				_, _ = fmt.Fprint(writer, "\n")
+			}
+		}
+	}
+
+	_, _ = fmt.Fprint(writer, "\n")
+
+	return nil
+}
+
 func PagerPrint(reader io.Reader) error {
 	pager := os.Getenv("PAGER")
 
@@ -188,4 +286,24 @@ func getTokenFullName(name xml.Name, nsAliases map[string]string) string {
 		}
 	}
 	return result
+}
+
+func getSelfClosingTags() map[string]bool {
+	return map[string]bool{
+		"area":   true,
+		"base":   true,
+		"br":     true,
+		"col":    true,
+		"embed":  true,
+		"hr":     true,
+		"img":    true,
+		"input":  true,
+		"keygen": true,
+		"link":   true,
+		"meta":   true,
+		"param":  true,
+		"source": true,
+		"track":  true,
+		"wbr":    true,
+	}
 }

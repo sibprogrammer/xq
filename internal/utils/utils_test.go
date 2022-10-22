@@ -3,7 +3,6 @@ package utils
 import (
 	"github.com/stretchr/testify/assert"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"strings"
@@ -16,12 +15,13 @@ func TestFormatXml(t *testing.T) {
 		"unformatted2.xml": "formatted2.xml",
 		"unformatted3.xml": "formatted3.xml",
 		"unformatted4.xml": "formatted4.xml",
+		"unformatted5.xml": "formatted5.xml",
 	}
 
 	for unformattedFile, expectedFile := range files {
-		unformattedXmlReader := getFileReader(path.Join("..", "..", "test", "data", unformattedFile))
+		unformattedXmlReader := getFileReader(path.Join("..", "..", "test", "data", "xml", unformattedFile))
 
-		bytes, readErr := ioutil.ReadFile(path.Join("..", "..", "test", "data", expectedFile))
+		bytes, readErr := os.ReadFile(path.Join("..", "..", "test", "data", "xml", expectedFile))
 		assert.Nil(t, readErr)
 		expectedXml := string(bytes)
 
@@ -29,6 +29,26 @@ func TestFormatXml(t *testing.T) {
 		formatErr := FormatXml(unformattedXmlReader, output, "  ", ColorsDisabled)
 		assert.Nil(t, formatErr)
 		assert.Equal(t, expectedXml, output.String())
+	}
+}
+
+func TestFormatHtml(t *testing.T) {
+	files := map[string]string{
+		"unformatted.html":  "formatted.html",
+		"unformatted2.html": "formatted2.html",
+	}
+
+	for unformattedFile, expectedFile := range files {
+		unformattedHtmlReader := getFileReader(path.Join("..", "..", "test", "data", "html", unformattedFile))
+
+		bytes, readErr := os.ReadFile(path.Join("..", "..", "test", "data", "html", expectedFile))
+		assert.Nil(t, readErr)
+		expectedHtml := string(bytes)
+
+		output := new(strings.Builder)
+		formatErr := FormatHtml(unformattedHtmlReader, output, "  ", ColorsDisabled)
+		assert.Nil(t, formatErr)
+		assert.Equal(t, expectedHtml, output.String())
 	}
 }
 

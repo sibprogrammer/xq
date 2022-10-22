@@ -53,7 +53,12 @@ var rootCmd = &cobra.Command{
 				err = utils.XPathQuery(reader, pw, query, singleNode)
 			} else {
 				colors := getColorMode(cmd.Flags())
-				err = utils.FormatXml(reader, pw, indent, colors)
+				isHtmlFormatter, _ := cmd.Flags().GetBool("html")
+				if isHtmlFormatter {
+					err = utils.FormatHtml(reader, pw, indent, colors)
+				} else {
+					err = utils.FormatXml(reader, pw, indent, colors)
+				}
 			}
 
 			if err != nil {
@@ -80,6 +85,7 @@ func Execute() {
 	rootCmd.PersistentFlags().Int("indent", viper.GetInt("indent"), "Use the given number of spaces for indentation")
 	rootCmd.PersistentFlags().Bool("no-color", viper.GetBool("no-color"), "Disable colorful output")
 	rootCmd.PersistentFlags().BoolP("color", "c", viper.GetBool("color"), "Force colorful output")
+	rootCmd.PersistentFlags().BoolP("html", "m", viper.GetBool("html"), "Use HTML formatter")
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
