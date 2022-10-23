@@ -2,14 +2,14 @@
 
 [![build](https://github.com/sibprogrammer/xq/workflows/build/badge.svg)](https://github.com/sibprogrammer/xq/actions)
 
-Command-line XML beautifier and content extractor. Similar to jq.
+Command-line XML and HTML beautifier and content extractor.
 
 ![xq](./assets/images/screenshot.png?raw=true)
 
 # Features
 
 * Syntax highlighting
-* Automatic indentation
+* Automatic indentation and formatting
 * Automatic pagination
 * Node content extraction
 
@@ -25,6 +25,12 @@ xq test/data/xml/unformatted.xml
 
 ```
 curl -s https://www.w3schools.com/xml/note.xml | xq
+```
+
+HTML content can be formatted and highlighted as well (using `-m` flag):
+
+```
+xq -m test/data/html/formatted.html
 ```
 
 It is possible to extract the content using XPath query language.
