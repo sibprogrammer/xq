@@ -1,0 +1,78 @@
+.\" Manpage for xq utility
+.TH XQ 1 "06 Nov 2022" "0.0.8" "xq man page"
+.SH NAME
+xq - command-line XML and HTML beautifier and content extractor
+.SH SYNOPSIS
+xq [\fIoptions...\fR] [\fIfile\fR]
+.SH DESCRIPTION
+Formats the provided \fIfile\fR and outputs it in the colorful mode.
+The file can be provided as an argument or via stdin.
+.SH OPTIONS
+.PP
+\fB--version\fR | \fB-v\fR
+.RS 4
+Prints versions information and exits.
+.RE
+.PP
+\fB--help\fR | \fB-h\fR
+.RS 4
+Prints the synopsis and a list of options and exits.
+.RE
+.PP
+\fB--indent\fR \fIint\fR
+.RS 4
+Uses the given number of spaces for indentation (default 2).
+.RE
+.PP
+\fB--no-color\fR
+.RS 4
+Disables colorful output (only formatting).
+.RE
+.PP
+\fB--tab\fR
+.RS 4
+Uses tabs instead of spaces for indentation.
+.RE
+.PP
+\fB--xpath\fR | \fB-x\fR \fIstring\fR
+.RS 4
+Extracts the node(s) from XML using provided XPath query.
+.RE
+.PP
+\fB--extract\fR | \fB-e\fR \fIstring\fR
+.RS 4
+Extracts a single node from XML using provided XPath query.
+.RE
+.PP
+\fB--html\fR | \fB-m\fR
+.RS 4
+Uses HTML formatter instead of XML.
+.RE
+.SH EXAMPLES
+.PP
+Format an XML file and highlight the syntax:
+
+.RS 4
+$ xq test/data/xml/unformatted.xml
+.RE
+.PP
+Utility also accepts input through stdin:
+
+.RS 4
+$ curl -s https://www.w3schools.com/xml/note.xml | xq
+.RE
+.PP
+HTML content can be formatted and highlighted using -m flag:
+
+.RS 4
+$ xq -m test/data/html/formatted.html
+.RE
+.PP
+Extract the text content of all nodes with city name:
+
+.RS 4
+$ cat test/data/xml/unformatted.xml | xq -x //city
+.RE
+.SH SEE ALSO
+.PP
+\fBhttps://github.com/sibprogrammer/xq\fR - official website
