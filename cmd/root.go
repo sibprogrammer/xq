@@ -79,6 +79,8 @@ func Execute() {
 
 	rootCmd.Version = Version
 
+	rootCmd.Flags().BoolP("help", "h", false, "Print this help message")
+	rootCmd.Flags().BoolP("version", "v", false, "Print version information")
 	rootCmd.PersistentFlags().StringP("xpath", "x", "", "Extract the node(s) from XML")
 	rootCmd.PersistentFlags().StringP("extract", "e", "", "Extract a single node from XML")
 	rootCmd.PersistentFlags().Bool("tab", viper.GetBool("tab"), "Use tabs for indentation")
