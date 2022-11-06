@@ -17,7 +17,7 @@ var Version string
 
 var rootCmd = &cobra.Command{
 	Use:          "xq",
-	Short:        "Command line XML beautifier and content extractor",
+	Short:        "Command-line XML and HTML beautifier and content extractor",
 	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var err error
