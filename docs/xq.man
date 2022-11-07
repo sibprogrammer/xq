@@ -1,5 +1,5 @@
 .\" Manpage for xq utility
-.TH XQ 1 "06 Nov 2022" "0.0.8" "xq man page"
+.TH XQ 1 "06 Nov 2022" "" "xq man page"
 .SH NAME
 xq - command-line XML and HTML beautifier and content extractor
 .SH SYNOPSIS
