@@ -55,9 +55,14 @@ See https://en.wikipedia.org/wiki/XPath for details.
 
 The preferable ways to install the utility are described below.
 
-For macOS:
+For macOS, via [Homebrew](https://brew.sh):
 ```
 brew install xq
+```
+
+For macOS, via [MacPorts](https://www.macports.org):
+```
+sudo port install xq
 ```
 
 For Linux:
