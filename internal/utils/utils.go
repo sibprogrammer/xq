@@ -243,11 +243,11 @@ func FormatHtml(reader io.Reader, writer io.Writer, indent string, colors int) e
 			docType := tokenizer.Text()
 			_, _ = fmt.Fprintf(writer, "%s%s%s\n", tagColor("<!doctype "), string(docType), tagColor(">"))
 		case html.CommentToken:
-			comment := tokenizer.Text()
+			comment := tokenizer.Raw()
 			if !hasContent && level > 0 {
 				_, _ = fmt.Fprint(writer, "\n", strings.Repeat(indent, level))
 			}
-			_, _ = fmt.Fprint(writer, commentColor("<!--"+string(comment)+"-->"))
+			_, _ = fmt.Fprint(writer, commentColor(string(comment)))
 			if level == 0 {
 				_, _ = fmt.Fprint(writer, "\n")
 			}
