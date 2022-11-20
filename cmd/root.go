@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/sibprogrammer/xq/internal/utils"
@@ -57,7 +58,10 @@ var rootCmd = &cobra.Command{
 				err = utils.CSSQuery(reader, pw, cssQuery)
 			} else {
 				colors := getColorMode(cmd.Flags())
-				isHtmlFormatter, _ := cmd.Flags().GetBool("html")
+
+				var isHtmlFormatter bool
+				isHtmlFormatter, reader = isHtmlFormatterNeeded(cmd.Flags(), reader)
+
 				if isHtmlFormatter {
 					err = utils.FormatHtml(reader, pw, indent, colors)
 				} else {
@@ -170,4 +174,25 @@ func getColorMode(flags *pflag.FlagSet) int {
 	}
 
 	return colors
+}
+
+func isHtmlFormatterNeeded(flags *pflag.FlagSet, origReader io.Reader) (bool, io.Reader) {
+	isHtmlFormatter, _ := flags.GetBool("html")
+	if isHtmlFormatter {
+		return isHtmlFormatter, origReader
+	}
+
+	buf := make([]byte, 10)
+	length, err := origReader.Read(buf)
+	if err != nil {
+		return false, origReader
+	}
+
+	prefix := strings.ToLower(string(buf))
+	if strings.Contains(prefix, "html") || strings.Contains(prefix, "<!d") {
+		isHtmlFormatter = true
+	}
+
+	reader := io.MultiReader(bytes.NewReader(buf[:length]), origReader)
+	return isHtmlFormatter, reader
 }
