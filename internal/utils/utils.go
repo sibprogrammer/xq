@@ -159,11 +159,11 @@ func XPathQuery(reader io.Reader, writer io.Writer, query string, singleNode boo
 
 	if singleNode {
 		if n := xmlquery.FindOne(doc, query); n != nil {
-			_, _ = fmt.Fprintf(writer, "%s\n", n.InnerText())
+			_, _ = fmt.Fprintf(writer, "%s\n", strings.TrimSpace(n.InnerText()))
 		}
 	} else {
 		for _, n := range xmlquery.Find(doc, query) {
-			_, _ = fmt.Fprintf(writer, "%s\n", n.InnerText())
+			_, _ = fmt.Fprintf(writer, "%s\n", strings.TrimSpace(n.InnerText()))
 		}
 	}
 
