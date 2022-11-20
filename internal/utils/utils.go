@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/xml"
 	"fmt"
+	"github.com/PuerkitoBio/goquery"
 	"github.com/antchfx/xmlquery"
 	"github.com/fatih/color"
 	"golang.org/x/net/html"
@@ -165,6 +166,19 @@ func XPathQuery(reader io.Reader, writer io.Writer, query string, singleNode boo
 			_, _ = fmt.Fprintf(writer, "%s\n", n.InnerText())
 		}
 	}
+
+	return nil
+}
+
+func CSSQuery(reader io.Reader, writer io.Writer, query string) error {
+	doc, err := goquery.NewDocumentFromReader(reader)
+	if err != nil {
+		return err
+	}
+
+	doc.Find(query).Each(func(index int, item *goquery.Selection) {
+		_, _ = fmt.Fprintf(writer, "%s\n", strings.TrimSpace(item.Text()))
+	})
 
 	return nil
 }
