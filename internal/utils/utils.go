@@ -146,7 +146,12 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 }
 
 func XPathQuery(reader io.Reader, writer io.Writer, query string, singleNode bool) error {
-	doc, err := xmlquery.Parse(reader)
+	doc, err := xmlquery.ParseWithOptions(reader, xmlquery.ParserOptions{
+		Decoder: &xmlquery.DecoderOptions{
+			Strict:    false,
+			AutoClose: xml.HTMLAutoClose,
+		},
+	})
 	if err != nil {
 		return err
 	}
