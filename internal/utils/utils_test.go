@@ -37,6 +37,7 @@ func TestFormatHtml(t *testing.T) {
 	files := map[string]string{
 		"unformatted.html":  "formatted.html",
 		"unformatted2.html": "formatted2.html",
+		"unformatted3.html": "formatted3.html",
 		"unformatted.xml":   "formatted.xml",
 	}
 

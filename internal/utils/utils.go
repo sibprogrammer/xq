@@ -198,6 +198,7 @@ func FormatHtml(reader io.Reader, writer io.Writer, indent string, colors int) e
 
 	level := 0
 	hasContent := false
+	forceNewLine := false
 	selfClosingTags := getSelfClosingTags()
 
 	for {
@@ -253,17 +254,19 @@ func FormatHtml(reader io.Reader, writer io.Writer, indent string, colors int) e
 			} else {
 				level++
 				_, _ = fmt.Fprint(writer, tagColor(">"))
+				forceNewLine = false
 			}
 		case html.EndTagToken:
 			level--
 			tagName, _ := tokenizer.TagName()
 
-			if !hasContent {
+			if forceNewLine {
 				_, _ = fmt.Fprint(writer, "\n", strings.Repeat(indent, level))
 			}
 			_, _ = fmt.Fprint(writer, tagColor("</"+string(tagName)+">"))
 
 			hasContent = false
+			forceNewLine = true
 		case html.DoctypeToken:
 			docType := tokenizer.Text()
 			_, _ = fmt.Fprintf(writer, "%s%s%s\n", tagColor("<!doctype "), string(docType), tagColor(">"))
