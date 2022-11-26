@@ -99,7 +99,9 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 			level++
 		case xml.CharData:
 			str := string(typedToken)
-			str = strings.TrimSpace(str)
+			if strings.TrimSpace(str) == "" {
+				str = ""
+			}
 			hasContent = str != ""
 			if hasContent && !startTagClosed {
 				_, _ = fmt.Fprint(writer, tagColor(">"))
@@ -212,7 +214,9 @@ func FormatHtml(reader io.Reader, writer io.Writer, indent string, colors int) e
 		switch token {
 		case html.TextToken:
 			str := string(tokenizer.Text())
-			str = strings.TrimSpace(str)
+			if strings.TrimSpace(str) == "" {
+				str = ""
+			}
 			hasContent = str != ""
 			_, _ = fmt.Fprint(writer, str)
 		case html.StartTagToken, html.SelfClosingTagToken:
