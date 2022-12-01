@@ -99,7 +99,7 @@ func Execute() {
 		"Force colorful output")
 	rootCmd.PersistentFlags().BoolP("html", "m", viper.GetBool("html"), "Use HTML formatter")
 	rootCmd.PersistentFlags().StringP("query", "q", "",
-		"Extract the node(s) using CSS selectors")
+		"Extract the node(s) using CSS selector")
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
