@@ -44,6 +44,11 @@ Extracts the node(s) from XML using provided XPath query.
 Extracts a single node from XML using provided XPath query.
 .RE
 .PP
+\fB--query\fR | \fB-q\fR \fIstring\fR
+.RS 4
+Extract the node(s) using CSS selector.
+.RE
+.PP
 \fB--html\fR | \fB-m\fR
 .RS 4
 Uses HTML formatter instead of XML.

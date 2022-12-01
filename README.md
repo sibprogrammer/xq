@@ -51,6 +51,12 @@ cat test/data/xml/unformatted.xml | xq -x /user/@status
 
 See https://en.wikipedia.org/wiki/XPath for details.
 
+It is possible to use CSS selector to extract the content as well:
+
+```
+cat test/data/html/unformatted.html | xq -q "body > p"
+```
+
 # Installation
 
 The preferable ways to install the utility are described below.
