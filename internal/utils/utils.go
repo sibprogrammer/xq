@@ -113,10 +113,18 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 				_, _ = fmt.Fprint(writer, tagColor(">"))
 				startTagClosed = true
 			}
-			if !hasContent && level > 0 {
-				_, _ = fmt.Fprint(writer, "\n", strings.Repeat(indent, level))
+
+			for index, commentLine := range strings.Split(string(typedToken), "\n") {
+				if !hasContent && level > 0 {
+					_, _ = fmt.Fprint(writer, "\n", strings.Repeat(indent, level))
+				}
+				if index == 0 {
+					_, _ = fmt.Fprint(writer, commentColor("<!--"))
+				}
+				_, _ = fmt.Fprint(writer, commentColor(commentLine))
 			}
-			_, _ = fmt.Fprint(writer, commentColor("<!--"+string(typedToken)+"-->"))
+			_, _ = fmt.Fprint(writer, commentColor("-->"))
+
 			if level == 0 {
 				_, _ = fmt.Fprint(writer, "\n")
 			}
@@ -271,11 +279,13 @@ func FormatHtml(reader io.Reader, writer io.Writer, indent string, colors int) e
 			docType := tokenizer.Text()
 			_, _ = fmt.Fprintf(writer, "%s%s%s\n", tagColor("<!doctype "), string(docType), tagColor(">"))
 		case html.CommentToken:
-			comment := tokenizer.Raw()
-			if !hasContent && level > 0 {
-				_, _ = fmt.Fprint(writer, "\n", strings.Repeat(indent, level))
+			for _, commentLine := range strings.Split(string(tokenizer.Raw()), "\n") {
+				if !hasContent && level > 0 {
+					_, _ = fmt.Fprint(writer, "\n", strings.Repeat(indent, level))
+				}
+				_, _ = fmt.Fprint(writer, commentColor(commentLine))
 			}
-			_, _ = fmt.Fprint(writer, commentColor(string(comment)))
+
 			if level == 0 {
 				_, _ = fmt.Fprint(writer, "\n")
 			}
