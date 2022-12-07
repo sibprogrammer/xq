@@ -9,6 +9,16 @@ import (
 	"testing"
 )
 
+func getFileReader(filename string) io.Reader {
+	reader, err := os.Open(filename)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return reader
+}
+
 func TestFormatXml(t *testing.T) {
 	files := map[string]string{
 		"unformatted.xml":  "formatted.xml",
@@ -57,12 +67,18 @@ func TestFormatHtml(t *testing.T) {
 	}
 }
 
-func getFileReader(filename string) io.Reader {
-	reader, err := os.Open(filename)
+func TestXPathQuery(t *testing.T) {
+	fileReader := getFileReader(path.Join("..", "..", "test", "data", "xml", "formatted.xml"))
+	output := new(strings.Builder)
+	err := XPathQuery(fileReader, output, "//first_name", true)
+	assert.Nil(t, err)
+	assert.Equal(t, "John", strings.Trim(output.String(), "\n"))
+}
 
-	if err != nil {
-		panic(err)
-	}
-
-	return reader
+func TestCSSQuery(t *testing.T) {
+	fileReader := getFileReader(path.Join("..", "..", "test", "data", "html", "formatted.html"))
+	output := new(strings.Builder)
+	err := CSSQuery(fileReader, output, "body > p")
+	assert.Nil(t, err)
+	assert.Equal(t, "text", strings.Trim(output.String(), "\n"))
 }
