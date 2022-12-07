@@ -297,6 +297,19 @@ func FormatHtml(reader io.Reader, writer io.Writer, indent string, colors int) e
 	return nil
 }
 
+func IsHTML(input string) bool {
+	input = strings.ToLower(input)
+	htmlMarkers := []string{"html", "<!d", "<body"}
+
+	for _, htmlMarker := range htmlMarkers {
+		if strings.Contains(input, htmlMarker) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func PagerPrint(reader io.Reader) error {
 	pager := os.Getenv("PAGER")
 

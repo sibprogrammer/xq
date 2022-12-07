@@ -60,7 +60,7 @@ var rootCmd = &cobra.Command{
 				colors := getColorMode(cmd.Flags())
 
 				var isHtmlFormatter bool
-				isHtmlFormatter, reader = isHtmlFormatterNeeded(cmd.Flags(), reader)
+				isHtmlFormatter, reader = isHTMLFormatterNeeded(cmd.Flags(), reader)
 
 				if isHtmlFormatter {
 					err = utils.FormatHtml(reader, pw, indent, colors)
@@ -176,7 +176,7 @@ func getColorMode(flags *pflag.FlagSet) int {
 	return colors
 }
 
-func isHtmlFormatterNeeded(flags *pflag.FlagSet, origReader io.Reader) (bool, io.Reader) {
+func isHTMLFormatterNeeded(flags *pflag.FlagSet, origReader io.Reader) (bool, io.Reader) {
 	isHtmlFormatter, _ := flags.GetBool("html")
 	if isHtmlFormatter {
 		return isHtmlFormatter, origReader
@@ -188,11 +188,6 @@ func isHtmlFormatterNeeded(flags *pflag.FlagSet, origReader io.Reader) (bool, io
 		return false, origReader
 	}
 
-	prefix := strings.ToLower(string(buf))
-	if strings.Contains(prefix, "html") || strings.Contains(prefix, "<!d") {
-		isHtmlFormatter = true
-	}
-
 	reader := io.MultiReader(bytes.NewReader(buf[:length]), origReader)
-	return isHtmlFormatter, reader
+	return utils.IsHTML(string(buf)), reader
 }

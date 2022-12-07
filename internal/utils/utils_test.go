@@ -82,3 +82,12 @@ func TestCSSQuery(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "text", strings.Trim(output.String(), "\n"))
 }
+
+func TestIsHTML(t *testing.T) {
+	assert.True(t, IsHTML("<html>"))
+	assert.True(t, IsHTML("<!doctype>"))
+	assert.True(t, IsHTML("<body> ..."))
+
+	assert.False(t, IsHTML("<?xml ?>"))
+	assert.False(t, IsHTML("<root></root>"))
+}
