@@ -310,17 +310,17 @@ func IsHTML(input string) bool {
 	return false
 }
 
-func PagerPrint(reader io.Reader) error {
+func PagerPrint(reader io.Reader, writer io.Writer) error {
 	pager := os.Getenv("PAGER")
 
 	if pager != "less" {
-		_, err := io.Copy(os.Stdout, reader)
+		_, err := io.Copy(writer, reader)
 		return err
 	}
 
 	cmd := exec.Command(pager, "--quit-if-one-screen", "--no-init", "--RAW-CONTROL-CHARS")
 	cmd.Stdin = reader
-	cmd.Stdout = os.Stdout
+	cmd.Stdout = writer
 
 	return cmd.Run()
 }

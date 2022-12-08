@@ -75,7 +75,7 @@ var rootCmd = &cobra.Command{
 			}
 		}()
 
-		return utils.PagerPrint(pr)
+		return utils.PagerPrint(pr, os.Stdout)
 	},
 }
 

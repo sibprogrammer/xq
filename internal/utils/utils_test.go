@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bytes"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"os"
@@ -90,4 +91,12 @@ func TestIsHTML(t *testing.T) {
 
 	assert.False(t, IsHTML("<?xml ?>"))
 	assert.False(t, IsHTML("<root></root>"))
+}
+
+func TestPagerPrint(t *testing.T) {
+	var output bytes.Buffer
+	fileReader := getFileReader(path.Join("..", "..", "test", "data", "html", "formatted.html"))
+	err := PagerPrint(fileReader, &output)
+	assert.Nil(t, err)
+	assert.Contains(t, output.String(), "<html>")
 }
