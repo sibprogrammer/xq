@@ -16,90 +16,98 @@ import (
 // Version information
 var Version string
 
-var rootCmd = &cobra.Command{
-	Use:          "xq",
-	Short:        "Command-line XML and HTML beautifier and content extractor",
-	SilenceUsage: true,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		var err error
-		var reader io.Reader
-		var indent string
+var rootCmd = NewRootCmd()
 
-		if indent, err = getIndent(cmd.Flags()); err != nil {
-			return err
-		}
+func NewRootCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:          "xq",
+		Short:        "Command-line XML and HTML beautifier and content extractor",
+		SilenceUsage: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			var reader io.Reader
+			var indent string
 
-		if len(args) == 0 {
-			fileInfo, _ := os.Stdin.Stat()
-
-			if (fileInfo.Mode() & os.ModeCharDevice) != 0 {
-				_ = cmd.Help()
-				return nil
-			}
-
-			reader = os.Stdin
-		} else {
-			if reader, err = os.Open(args[len(args)-1]); err != nil {
+			if indent, err = getIndent(cmd.Flags()); err != nil {
 				return err
 			}
-		}
 
-		xPathQuery, singleNode := getXpathQuery(cmd.Flags())
-		cssQuery, _ := cmd.Flags().GetString("query")
+			if len(args) == 0 {
+				fileInfo, _ := os.Stdin.Stat()
 
-		pr, pw := io.Pipe()
+				if (fileInfo.Mode() & os.ModeCharDevice) != 0 {
+					_ = cmd.Help()
+					return nil
+				}
 
-		go func() {
-			defer pw.Close()
-
-			if xPathQuery != "" {
-				err = utils.XPathQuery(reader, pw, xPathQuery, singleNode)
-			} else if cssQuery != "" {
-				err = utils.CSSQuery(reader, pw, cssQuery)
+				reader = os.Stdin
 			} else {
-				colors := getColorMode(cmd.Flags())
-
-				var isHtmlFormatter bool
-				isHtmlFormatter, reader = isHTMLFormatterNeeded(cmd.Flags(), reader)
-
-				if isHtmlFormatter {
-					err = utils.FormatHtml(reader, pw, indent, colors)
-				} else {
-					err = utils.FormatXml(reader, pw, indent, colors)
+				if reader, err = os.Open(args[len(args)-1]); err != nil {
+					return err
 				}
 			}
 
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
-		}()
+			xPathQuery, singleNode := getXpathQuery(cmd.Flags())
+			cssQuery, _ := cmd.Flags().GetString("query")
 
-		return utils.PagerPrint(pr, os.Stdout)
-	},
+			pr, pw := io.Pipe()
+
+			go func() {
+				defer pw.Close()
+
+				if xPathQuery != "" {
+					err = utils.XPathQuery(reader, pw, xPathQuery, singleNode)
+				} else if cssQuery != "" {
+					err = utils.CSSQuery(reader, pw, cssQuery)
+				} else {
+					colors := getColorMode(cmd.Flags())
+
+					var isHtmlFormatter bool
+					isHtmlFormatter, reader = isHTMLFormatterNeeded(cmd.Flags(), reader)
+
+					if isHtmlFormatter {
+						err = utils.FormatHtml(reader, pw, indent, colors)
+					} else {
+						err = utils.FormatXml(reader, pw, indent, colors)
+					}
+				}
+
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(1)
+				}
+			}()
+
+			return utils.PagerPrint(pr, cmd.OutOrStdout())
+		},
+	}
 }
 
-func Execute() {
+func InitFlags(cmd *cobra.Command) {
 	if err := initViper(); err != nil {
 		fmt.Printf("Error while reading the config file: %v\n", err)
 		os.Exit(1)
 	}
 
-	rootCmd.Version = Version
+	cmd.Version = Version
 
-	rootCmd.Flags().BoolP("help", "h", false, "Print this help message")
-	rootCmd.Flags().BoolP("version", "v", false, "Print version information")
-	rootCmd.PersistentFlags().StringP("xpath", "x", "", "Extract the node(s) from XML")
-	rootCmd.PersistentFlags().StringP("extract", "e", "", "Extract a single node from XML")
-	rootCmd.PersistentFlags().Bool("tab", viper.GetBool("tab"), "Use tabs for indentation")
-	rootCmd.PersistentFlags().Int("indent", viper.GetInt("indent"),
+	cmd.Flags().BoolP("help", "h", false, "Print this help message")
+	cmd.Flags().BoolP("version", "v", false, "Print version information")
+	cmd.PersistentFlags().StringP("xpath", "x", "", "Extract the node(s) from XML")
+	cmd.PersistentFlags().StringP("extract", "e", "", "Extract a single node from XML")
+	cmd.PersistentFlags().Bool("tab", viper.GetBool("tab"), "Use tabs for indentation")
+	cmd.PersistentFlags().Int("indent", viper.GetInt("indent"),
 		"Use the given number of spaces for indentation")
-	rootCmd.PersistentFlags().Bool("no-color", viper.GetBool("no-color"), "Disable colorful output")
-	rootCmd.PersistentFlags().BoolP("color", "c", viper.GetBool("color"),
+	cmd.PersistentFlags().Bool("no-color", viper.GetBool("no-color"), "Disable colorful output")
+	cmd.PersistentFlags().BoolP("color", "c", viper.GetBool("color"),
 		"Force colorful output")
-	rootCmd.PersistentFlags().BoolP("html", "m", viper.GetBool("html"), "Use HTML formatter")
-	rootCmd.PersistentFlags().StringP("query", "q", "",
+	cmd.PersistentFlags().BoolP("html", "m", viper.GetBool("html"), "Use HTML formatter")
+	cmd.PersistentFlags().StringP("query", "q", "",
 		"Extract the node(s) using CSS selector")
+}
+
+func Execute() {
+	InitFlags(rootCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
