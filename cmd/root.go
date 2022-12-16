@@ -123,7 +123,7 @@ func getIndent(flags *pflag.FlagSet) (string, error) {
 		return "", err
 	}
 	if indentWidth < 1 || indentWidth > 8 {
-		return "", errors.New("intend should be between 1-8 spaces")
+		return "", errors.New("indent should be between 1-8 spaces")
 	}
 
 	indent := strings.Repeat(" ", indentWidth)
