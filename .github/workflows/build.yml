@@ -1,9 +1,16 @@
 name: build
 
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - '**.go'
+      - 'go.mod'
+  pull_request:
+    paths:
+      - '**.go'
+      - 'go.mod'
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     steps:
