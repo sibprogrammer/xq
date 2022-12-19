@@ -4,6 +4,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/sibprogrammer/xq)](https://goreportcard.com/report/github.com/sibprogrammer/xq)
 [![Codecov](https://codecov.io/gh/sibprogrammer/xq/branch/master/graph/badge.svg?token=G6QX77SQOH)](https://codecov.io/gh/sibprogrammer/xq)
 [![Homebrew](https://img.shields.io/badge/dynamic/json.svg?url=https://formulae.brew.sh/api/formula/xq.json&query=$.versions.stable&label=homebrew)](https://formulae.brew.sh/formula/xq)
+[![Macports](https://repology.org/badge/version-for-repo/macports/xq-sibprogrammer.svg)](https://repology.org/project/xq-sibprogrammer/versions)
 
 Command-line XML and HTML beautifier and content extractor.
 
