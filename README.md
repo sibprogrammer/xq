@@ -74,9 +74,14 @@ For macOS, via [MacPorts](https://www.macports.org):
 sudo port install xq
 ```
 
-For Linux:
+For Linux using custom installer:
 ```
 curl -sSL https://bit.ly/install-xq | sudo bash
+```
+
+For Ubuntu 22.10 or higher via package manager:
+```
+apt-get install xq
 ```
 
 For Fedora via package manager:
