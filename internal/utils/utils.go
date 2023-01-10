@@ -147,7 +147,7 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 			hasContent = false
 			lastTagName = currentTagName
 		case xml.Directive:
-			_, _ = fmt.Fprint(writer, "<!"+string(typedToken)+">")
+			_, _ = fmt.Fprint(writer, tagColor("<!"), string(typedToken), tagColor(">"))
 			_, _ = fmt.Fprint(writer, "\n", strings.Repeat(indent, level))
 		default:
 		}
