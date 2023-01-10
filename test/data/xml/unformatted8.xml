@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:webfeeds="http://webfeeds.org/rss/1.0" xmlns:media="http://search.yahoo.com/mrss/">
+    <channel>
+        <title>Some Title</title>
+        <description>Public posts from ...</description>
+        <link>https://mastodon.social/@some-user</link>
+        <image>
+            <url>https://files...</url>
+            <title>Flame Reactor</title>
+            <link>https://mastodon...</link>
+        </image>
+    </channel>
+</rss>

@@ -24,7 +24,6 @@ const (
 func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) error {
 	decoder := xml.NewDecoder(reader)
 	decoder.Strict = false
-	decoder.AutoClose = xml.HTMLAutoClose
 	decoder.CharsetReader = func(charset string, input io.Reader) (io.Reader, error) {
 		e, err := ianaindex.MIME.Encoding(charset)
 		if err != nil {
