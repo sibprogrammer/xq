@@ -1,0 +1,3 @@
+<root>
+  <SEQUENCE mandatory="FALSE" precondition="GetParam(&quot;HASH_VALUE_SHARING_MODE&quot;) != 1"/>
+</root>

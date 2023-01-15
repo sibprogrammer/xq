@@ -22,15 +22,16 @@ func getFileReader(filename string) io.Reader {
 
 func TestFormatXml(t *testing.T) {
 	files := map[string]string{
-		"unformatted.xml":  "formatted.xml",
-		"unformatted2.xml": "formatted2.xml",
-		"unformatted3.xml": "formatted3.xml",
-		"unformatted4.xml": "formatted4.xml",
-		"unformatted5.xml": "formatted5.xml",
-		"unformatted6.xml": "formatted6.xml",
-		"unformatted7.xml": "formatted7.xml",
-		"unformatted8.xml": "formatted8.xml",
-		"unformatted9.xml": "formatted9.xml",
+		"unformatted.xml":   "formatted.xml",
+		"unformatted2.xml":  "formatted2.xml",
+		"unformatted3.xml":  "formatted3.xml",
+		"unformatted4.xml":  "formatted4.xml",
+		"unformatted5.xml":  "formatted5.xml",
+		"unformatted6.xml":  "formatted6.xml",
+		"unformatted7.xml":  "formatted7.xml",
+		"unformatted8.xml":  "formatted8.xml",
+		"unformatted9.xml":  "formatted9.xml",
+		"unformatted10.xml": "formatted10.xml",
 	}
 
 	for unformattedFile, expectedFile := range files {
@@ -53,6 +54,7 @@ func TestFormatHtml(t *testing.T) {
 		"unformatted2.html": "formatted2.html",
 		"unformatted3.html": "formatted3.html",
 		"unformatted4.html": "formatted4.html",
+		"unformatted5.html": "formatted5.html",
 		"unformatted.xml":   "formatted.xml",
 	}
 
@@ -101,4 +103,10 @@ func TestPagerPrint(t *testing.T) {
 	err := PagerPrint(fileReader, &output)
 	assert.Nil(t, err)
 	assert.Contains(t, output.String(), "<html>")
+}
+
+func TestEscapeText(t *testing.T) {
+	result, err := escapeText("\"value\"")
+	assert.Nil(t, err)
+	assert.Equal(t, "&quot;value&quot;", result)
 }

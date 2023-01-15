@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bytes"
 	"encoding/xml"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
@@ -85,7 +86,9 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 				if attr.Name.Local == "xmlns" {
 					nsAliases[attr.Value] = ""
 				}
-				attrs = append(attrs, getTokenFullName(attr.Name, nsAliases)+attrColor("=\""+attr.Value+"\""))
+				escapedValue, _ := escapeText(attr.Value)
+				attrElement := getTokenFullName(attr.Name, nsAliases) + attrColor("=\""+escapedValue+"\"")
+				attrs = append(attrs, attrElement)
 			}
 			attrsStr := strings.Join(attrs, " ")
 			if attrsStr != "" {
@@ -248,7 +251,8 @@ func FormatHtml(reader io.Reader, writer io.Writer, indent string, colors int) e
 			if hasAttr {
 				for {
 					attrKey, attrValue, moreAttr := tokenizer.TagAttr()
-					attrs = append(attrs, string(attrKey)+attrColor("=\""+string(attrValue)+"\""))
+					escapedValue, _ := escapeText(string(attrValue))
+					attrs = append(attrs, string(attrKey)+attrColor("=\""+escapedValue+"\""))
 					if !moreAttr {
 						break
 					}
@@ -359,4 +363,17 @@ func getSelfClosingTags() map[string]bool {
 		"track":  true,
 		"wbr":    true,
 	}
+}
+
+func escapeText(input string) (string, error) {
+	buf := new(bytes.Buffer)
+	if err := xml.EscapeText(buf, []byte(input)); err != nil {
+		return "", err
+	}
+
+	result := buf.String()
+	result = strings.Replace(result, "&#34;", "&quot;", -1)
+	result = strings.Replace(result, "&#39;", "&apos;", -1)
+
+	return result, nil
 }
