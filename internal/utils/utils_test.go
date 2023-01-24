@@ -73,11 +73,24 @@ func TestFormatHtml(t *testing.T) {
 }
 
 func TestXPathQuery(t *testing.T) {
-	fileReader := getFileReader(path.Join("..", "..", "test", "data", "xml", "formatted.xml"))
-	output := new(strings.Builder)
-	err := XPathQuery(fileReader, output, "//first_name", true)
-	assert.Nil(t, err)
-	assert.Equal(t, "John", strings.Trim(output.String(), "\n"))
+	type test struct {
+		input  string
+		query  string
+		result string
+	}
+
+	tests := []test{
+		{input: "formatted.xml", query: "//first_name", result: "John"},
+		{input: "unformatted8.xml", query: "//title", result: "Some Title"},
+	}
+
+	for _, testCase := range tests {
+		fileReader := getFileReader(path.Join("..", "..", "test", "data", "xml", testCase.input))
+		output := new(strings.Builder)
+		err := XPathQuery(fileReader, output, testCase.query, true)
+		assert.Nil(t, err)
+		assert.Equal(t, testCase.result, strings.Trim(output.String(), "\n"))
+	}
 }
 
 func TestCSSQuery(t *testing.T) {
