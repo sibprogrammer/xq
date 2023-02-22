@@ -161,7 +161,8 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 	return nil
 }
 
-func XPathQuery(reader io.Reader, writer io.Writer, query string, singleNode bool) error {
+func XPathQuery(reader io.Reader, writer io.Writer, query string, singleNode bool, nodeContent bool, indent string,
+	colors int) error {
 	doc, err := xmlquery.ParseWithOptions(reader, xmlquery.ParserOptions{
 		Decoder: &xmlquery.DecoderOptions{
 			Strict: false,
@@ -173,15 +174,28 @@ func XPathQuery(reader io.Reader, writer io.Writer, query string, singleNode boo
 
 	if singleNode {
 		if n := xmlquery.FindOne(doc, query); n != nil {
-			_, _ = fmt.Fprintf(writer, "%s\n", strings.TrimSpace(n.InnerText()))
+			return printNodeContent(writer, n, nodeContent, indent, colors)
 		}
 	} else {
 		for _, n := range xmlquery.Find(doc, query) {
-			_, _ = fmt.Fprintf(writer, "%s\n", strings.TrimSpace(n.InnerText()))
+			err := printNodeContent(writer, n, nodeContent, indent, colors)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
 	return nil
+}
+
+func printNodeContent(writer io.Writer, node *xmlquery.Node, withTags bool, indent string, colors int) error {
+	if withTags {
+		reader := strings.NewReader(node.OutputXML(true))
+		return FormatXml(reader, writer, indent, colors)
+	}
+
+	_, err := fmt.Fprintf(writer, "%s\n", strings.TrimSpace(node.InnerText()))
+	return err
 }
 
 func CSSQuery(reader io.Reader, writer io.Writer, query string) error {

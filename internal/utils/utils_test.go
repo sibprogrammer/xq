@@ -75,19 +75,21 @@ func TestFormatHtml(t *testing.T) {
 func TestXPathQuery(t *testing.T) {
 	type test struct {
 		input  string
+		node   bool
 		query  string
 		result string
 	}
 
 	tests := []test{
-		{input: "formatted.xml", query: "//first_name", result: "John"},
-		{input: "unformatted8.xml", query: "//title", result: "Some Title"},
+		{input: "formatted.xml", node: false, query: "//first_name", result: "John"},
+		{input: "unformatted8.xml", node: false, query: "//title", result: "Some Title"},
+		{input: "unformatted8.xml", node: true, query: "//title", result: "<title>Some Title</title>"},
 	}
 
 	for _, testCase := range tests {
 		fileReader := getFileReader(path.Join("..", "..", "test", "data", "xml", testCase.input))
 		output := new(strings.Builder)
-		err := XPathQuery(fileReader, output, testCase.query, true)
+		err := XPathQuery(fileReader, output, testCase.query, true, testCase.node, "  ", 0)
 		assert.Nil(t, err)
 		assert.Equal(t, testCase.result, strings.Trim(output.String(), "\n"))
 	}

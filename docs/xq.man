@@ -46,12 +46,17 @@ Extracts a single node from XML using provided XPath query.
 .PP
 \fB--query\fR | \fB-q\fR \fIstring\fR
 .RS 4
-Extract the node(s) using CSS selector.
+Extracts the node(s) using CSS selector.
 .RE
 .PP
 \fB--html\fR | \fB-m\fR
 .RS 4
 Uses HTML formatter instead of XML.
+.RE
+.PP
+\fB--node\fR | \fB-n\fR
+.RS 4
+Returns the node content instead of text.
 .RE
 .SH EXAMPLES
 .PP
@@ -77,6 +82,12 @@ Extract the text content of all nodes with city name:
 
 .RS 4
 $ cat test/data/xml/unformatted.xml | xq -x //city
+.RE
+.PP
+Extract the XML content of all nodes with city name:
+
+.RS 4
+$ cat test/data/xml/unformatted.xml | xq -n -x //city
 .RE
 .SH SEE ALSO
 .PP

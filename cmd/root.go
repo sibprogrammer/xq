@@ -49,6 +49,8 @@ func NewRootCmd() *cobra.Command {
 
 			xPathQuery, singleNode := getXpathQuery(cmd.Flags())
 			cssQuery, _ := cmd.Flags().GetString("query")
+			nodeContent, _ := cmd.Flags().GetBool("node")
+			colors := getColorMode(cmd.Flags())
 
 			pr, pw := io.Pipe()
 
@@ -56,12 +58,10 @@ func NewRootCmd() *cobra.Command {
 				defer pw.Close()
 
 				if xPathQuery != "" {
-					err = utils.XPathQuery(reader, pw, xPathQuery, singleNode)
+					err = utils.XPathQuery(reader, pw, xPathQuery, singleNode, nodeContent, indent, colors)
 				} else if cssQuery != "" {
 					err = utils.CSSQuery(reader, pw, cssQuery)
 				} else {
-					colors := getColorMode(cmd.Flags())
-
 					var isHtmlFormatter bool
 					isHtmlFormatter, reader = isHTMLFormatterNeeded(cmd.Flags(), reader)
 
@@ -104,6 +104,8 @@ func InitFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().BoolP("html", "m", viper.GetBool("html"), "Use HTML formatter")
 	cmd.PersistentFlags().StringP("query", "q", "",
 		"Extract the node(s) using CSS selector")
+	cmd.PersistentFlags().BoolP("node", "n", viper.GetBool("node"),
+		"Return the node content instead of text")
 }
 
 func Execute() {
