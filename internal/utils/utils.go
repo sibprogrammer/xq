@@ -3,6 +3,7 @@ package utils
 import (
 	"bytes"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/antchfx/xmlquery"
@@ -162,7 +163,13 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 }
 
 func XPathQuery(reader io.Reader, writer io.Writer, query string, singleNode bool, nodeContent bool, indent string,
-	colors int) error {
+	colors int) (errRes error) {
+	defer func() {
+		if err := recover(); err != nil {
+			errRes = errors.New(fmt.Sprintf("XPath error: %v", err))
+		}
+	}()
+
 	doc, err := xmlquery.ParseWithOptions(reader, xmlquery.ParserOptions{
 		Decoder: &xmlquery.DecoderOptions{
 			Strict: false,
