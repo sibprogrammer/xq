@@ -14,6 +14,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 )
 
@@ -101,10 +102,7 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 			startTagClosed = false
 			level++
 		case xml.CharData:
-			str := string(typedToken)
-			if strings.TrimSpace(str) == "" {
-				str = ""
-			}
+			str := normalizeSpaces(string(typedToken), indent, level)
 			hasContent = str != ""
 			if hasContent && !startTagClosed {
 				_, _ = fmt.Fprint(writer, tagColor(">"))
@@ -247,10 +245,7 @@ func FormatHtml(reader io.Reader, writer io.Writer, indent string, colors int) e
 
 		switch token {
 		case html.TextToken:
-			str := string(tokenizer.Text())
-			if strings.TrimSpace(str) == "" {
-				str = ""
-			}
+			str := normalizeSpaces(string(tokenizer.Text()), indent, level)
 			hasContent = str != ""
 			_, _ = fmt.Fprint(writer, str)
 		case html.StartTagToken, html.SelfClosingTagToken:
@@ -396,4 +391,24 @@ func escapeText(input string) (string, error) {
 	result = strings.Replace(result, "&#39;", "&apos;", -1)
 
 	return result, nil
+}
+
+func normalizeSpaces(input string, indent string, level int) string {
+	if strings.TrimSpace(input) == "" {
+		input = ""
+	}
+
+	regexpHead, _ := regexp.Compile("^ *\n +")
+	if regexpHead.MatchString(input) {
+		input = strings.TrimLeft(input, " \n")
+		input = "\n" + strings.Repeat(indent, level) + input
+	}
+
+	regexpTail, _ := regexp.Compile("\n +$")
+	if regexpTail.MatchString(input) {
+		input = strings.TrimRight(input, " \n")
+		input += "\n" + strings.Repeat(indent, level-1)
+	}
+
+	return input
 }
