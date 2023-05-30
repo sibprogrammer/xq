@@ -5,8 +5,17 @@ builds:
     goos:
       - linux
       - darwin
+      - aix
+    goarch:
+      - 386
+      - amd64
+      - arm64
+      - ppc64
     goamd64:
       - ''
+    ignore:
+      - goos: linux
+        goarch: ppc64
 checksum:
   name_template: 'checksums.txt'
 snapshot:
