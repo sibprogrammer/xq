@@ -100,7 +100,7 @@ func TestXPathQuery(t *testing.T) {
 func TestCSSQuery(t *testing.T) {
 	fileReader := getFileReader(path.Join("..", "..", "test", "data", "html", "formatted.html"))
 	output := new(strings.Builder)
-	err := CSSQuery(fileReader, output, "body > p")
+	err := CSSQuery(fileReader, output, "body > p", "")
 	assert.Nil(t, err)
 	assert.Equal(t, "text", strings.Trim(output.String(), "\n"))
 }

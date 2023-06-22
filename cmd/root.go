@@ -48,9 +48,14 @@ func NewRootCmd() *cobra.Command {
 			}
 
 			xPathQuery, singleNode := getXpathQuery(cmd.Flags())
-			cssQuery, _ := cmd.Flags().GetString("query")
 			nodeContent, _ := cmd.Flags().GetBool("node")
 			colors := getColorMode(cmd.Flags())
+
+			cssQuery, _ := cmd.Flags().GetString("query")
+			cssAttr, _ := cmd.Flags().GetString("attr")
+			if cssAttr != "" && cssQuery == "" {
+				return errors.New("query option (-q) is missed for attribute selection")
+			}
 
 			pr, pw := io.Pipe()
 
@@ -60,7 +65,7 @@ func NewRootCmd() *cobra.Command {
 				if xPathQuery != "" {
 					err = utils.XPathQuery(reader, pw, xPathQuery, singleNode, nodeContent, indent, colors)
 				} else if cssQuery != "" {
-					err = utils.CSSQuery(reader, pw, cssQuery)
+					err = utils.CSSQuery(reader, pw, cssQuery, cssAttr)
 				} else {
 					var isHtmlFormatter bool
 					isHtmlFormatter, reader = isHTMLFormatterNeeded(cmd.Flags(), reader)
@@ -104,6 +109,8 @@ func InitFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().BoolP("html", "m", viper.GetBool("html"), "Use HTML formatter")
 	cmd.PersistentFlags().StringP("query", "q", "",
 		"Extract the node(s) using CSS selector")
+	cmd.PersistentFlags().StringP("attr", "a", "",
+		"Extract an attribute value instead of node content for provided CSS query")
 	cmd.PersistentFlags().BoolP("node", "n", viper.GetBool("node"),
 		"Return the node content instead of text")
 }

@@ -203,14 +203,18 @@ func printNodeContent(writer io.Writer, node *xmlquery.Node, withTags bool, inde
 	return err
 }
 
-func CSSQuery(reader io.Reader, writer io.Writer, query string) error {
+func CSSQuery(reader io.Reader, writer io.Writer, query string, attr string) error {
 	doc, err := goquery.NewDocumentFromReader(reader)
 	if err != nil {
 		return err
 	}
 
 	doc.Find(query).Each(func(index int, item *goquery.Selection) {
-		_, _ = fmt.Fprintf(writer, "%s\n", strings.TrimSpace(item.Text()))
+		if attr != "" {
+			_, _ = fmt.Fprintf(writer, "%s\n", strings.TrimSpace(item.AttrOr(attr, "")))
+		} else {
+			_, _ = fmt.Fprintf(writer, "%s\n", strings.TrimSpace(item.Text()))
+		}
 	})
 
 	return nil
