@@ -60,10 +60,16 @@ It is possible to use CSS selector to extract the content as well:
 cat test/data/html/unformatted.html | xq -q "body > p"
 ```
 
-To extract an attribute value instead of node content additional option `--attr` (`-a`) can be used:
+Extract an attribute value instead of node content additional option `--attr` (`-a`) can be used:
 
 ```
 cat test/data/html/unformatted.html | xq -q "head > script" -a "src"
+```
+
+Extract part of HTML with tags (not only text content) using CSS selector:
+
+```
+cat test/data/html/unformatted.html | xq -n -q "head"
 ```
 
 # Installation

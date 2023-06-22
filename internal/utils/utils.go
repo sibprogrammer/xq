@@ -203,7 +203,7 @@ func printNodeContent(writer io.Writer, node *xmlquery.Node, withTags bool, inde
 	return err
 }
 
-func CSSQuery(reader io.Reader, writer io.Writer, query string, attr string) error {
+func CSSQuery(reader io.Reader, writer io.Writer, query string, attr string, withTags bool, indent string, colors int) error {
 	doc, err := goquery.NewDocumentFromReader(reader)
 	if err != nil {
 		return err
@@ -213,7 +213,24 @@ func CSSQuery(reader io.Reader, writer io.Writer, query string, attr string) err
 		if attr != "" {
 			_, _ = fmt.Fprintf(writer, "%s\n", strings.TrimSpace(item.AttrOr(attr, "")))
 		} else {
-			_, _ = fmt.Fprintf(writer, "%s\n", strings.TrimSpace(item.Text()))
+			if withTags {
+				node := item.Nodes[0]
+				tagName := node.Data
+				var attrs []string
+				attrsStr := ""
+				for _, tagAttr := range node.Attr {
+					escapedValue, _ := escapeText(string(tagAttr.Val))
+					attrs = append(attrs, string(tagAttr.Key)+"=\""+escapedValue+"\"")
+				}
+				if len(attrs) > 0 {
+					attrsStr = " " + strings.Join(attrs, " ")
+				}
+				html, _ := item.Html()
+				reader := strings.NewReader(fmt.Sprintf("<%s%s>%s</%s>", tagName, attrsStr, html, tagName))
+				FormatHtml(reader, writer, indent, colors)
+			} else {
+				_, _ = fmt.Fprintf(writer, "%s\n", strings.TrimSpace(item.Text()))
+			}
 		}
 	})
 

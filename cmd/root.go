@@ -65,7 +65,7 @@ func NewRootCmd() *cobra.Command {
 				if xPathQuery != "" {
 					err = utils.XPathQuery(reader, pw, xPathQuery, singleNode, nodeContent, indent, colors)
 				} else if cssQuery != "" {
-					err = utils.CSSQuery(reader, pw, cssQuery, cssAttr)
+					err = utils.CSSQuery(reader, pw, cssQuery, cssAttr, nodeContent, indent, colors)
 				} else {
 					var isHtmlFormatter bool
 					isHtmlFormatter, reader = isHTMLFormatterNeeded(cmd.Flags(), reader)
