@@ -2,12 +2,13 @@ package utils
 
 import (
 	"bytes"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"os"
 	"path"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func getFileReader(filename string) io.Reader {
@@ -98,11 +99,26 @@ func TestXPathQuery(t *testing.T) {
 }
 
 func TestCSSQuery(t *testing.T) {
-	fileReader := getFileReader(path.Join("..", "..", "test", "data", "html", "formatted.html"))
-	output := new(strings.Builder)
-	err := CSSQuery(fileReader, output, "body > p", "", false, "  ", 0)
-	assert.Nil(t, err)
-	assert.Equal(t, "text", strings.Trim(output.String(), "\n"))
+	type test struct {
+		input  string
+		node   bool
+		query  string
+		attr   string
+		result string
+	}
+
+	tests := []test{
+		{input: "formatted.html", node: false, query: "body > p", attr: "", result: "text"},
+		{input: "formatted.html", node: false, query: "script", attr: "src", result:  "foo.js\nbar.js\nbaz.js"},
+	}
+
+	for _, testCase := range tests {
+		fileReader := getFileReader(path.Join("..", "..", "test", "data", "html", testCase.input))
+		output := new(strings.Builder)
+		err := CSSQuery(fileReader, output, testCase.query, testCase.attr, testCase.node, "  ", 0)
+		assert.Nil(t, err)
+		assert.Equal(t, testCase.result, strings.Trim(output.String(), "\n"))
+	}
 }
 
 func TestIsHTML(t *testing.T) {
