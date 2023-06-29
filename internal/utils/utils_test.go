@@ -109,7 +109,9 @@ func TestCSSQuery(t *testing.T) {
 
 	tests := []test{
 		{input: "formatted.html", node: false, query: "body > p", attr: "", result: "text"},
-		{input: "formatted.html", node: false, query: "script", attr: "src", result:  "foo.js\nbar.js\nbaz.js"},
+		{input: "formatted.html", node: false, query: "script", attr: "src", result: "foo.js\nbar.js\nbaz.js"},
+		{input: "formatted.html", node: true, query: "p", attr: "", result: "<p>text</p>"},
+		{input: "formatted.html", node: true, query: "a", attr: "", result: "<a href=\"https://example.com\">link</a>"},
 	}
 
 	for _, testCase := range tests {
