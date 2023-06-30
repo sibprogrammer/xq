@@ -31,7 +31,6 @@ func NewRootCmd() *cobra.Command {
 			if indent, err = getIndent(cmd.Flags()); err != nil {
 				return err
 			}
-
 			if len(args) == 0 {
 				fileInfo, _ := os.Stdin.Stat()
 
