@@ -24,6 +24,12 @@ const (
 	ColorsDisabled
 )
 
+type QueryOptions struct {
+	WithTags bool
+	Indent   string
+	Colors   int
+}
+
 func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) error {
 	decoder := xml.NewDecoder(reader)
 	decoder.Strict = false
@@ -160,8 +166,7 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 	return nil
 }
 
-func XPathQuery(reader io.Reader, writer io.Writer, query string, singleNode bool, nodeContent bool, indent string,
-	colors int) (errRes error) {
+func XPathQuery(reader io.Reader, writer io.Writer, query string, singleNode bool, options QueryOptions) (errRes error) {
 	defer func() {
 		if err := recover(); err != nil {
 			errRes = errors.New(fmt.Sprintf("XPath error: %v", err))
@@ -179,11 +184,11 @@ func XPathQuery(reader io.Reader, writer io.Writer, query string, singleNode boo
 
 	if singleNode {
 		if n := xmlquery.FindOne(doc, query); n != nil {
-			return printNodeContent(writer, n, nodeContent, indent, colors)
+			return printNodeContent(writer, n, options)
 		}
 	} else {
 		for _, n := range xmlquery.Find(doc, query) {
-			err := printNodeContent(writer, n, nodeContent, indent, colors)
+			err := printNodeContent(writer, n, options)
 			if err != nil {
 				return err
 			}
@@ -193,17 +198,17 @@ func XPathQuery(reader io.Reader, writer io.Writer, query string, singleNode boo
 	return nil
 }
 
-func printNodeContent(writer io.Writer, node *xmlquery.Node, withTags bool, indent string, colors int) error {
-	if withTags {
+func printNodeContent(writer io.Writer, node *xmlquery.Node, options QueryOptions) error {
+	if options.WithTags {
 		reader := strings.NewReader(node.OutputXML(true))
-		return FormatXml(reader, writer, indent, colors)
+		return FormatXml(reader, writer, options.Indent, options.Colors)
 	}
 
 	_, err := fmt.Fprintf(writer, "%s\n", strings.TrimSpace(node.InnerText()))
 	return err
 }
 
-func CSSQuery(reader io.Reader, writer io.Writer, query string, attr string, withTags bool, indent string, colors int) error {
+func CSSQuery(reader io.Reader, writer io.Writer, query string, attr string, options QueryOptions) error {
 	doc, err := goquery.NewDocumentFromReader(reader)
 	if err != nil {
 		return err
@@ -213,7 +218,7 @@ func CSSQuery(reader io.Reader, writer io.Writer, query string, attr string, wit
 		if attr != "" {
 			_, _ = fmt.Fprintf(writer, "%s\n", strings.TrimSpace(item.AttrOr(attr, "")))
 		} else {
-			if withTags {
+			if options.WithTags {
 				node := item.Nodes[0]
 				tagName := node.Data
 				var attrs []string
@@ -227,7 +232,7 @@ func CSSQuery(reader io.Reader, writer io.Writer, query string, attr string, wit
 				}
 				html, _ := item.Html()
 				reader := strings.NewReader(fmt.Sprintf("<%s%s>%s</%s>", tagName, attrsStr, html, tagName))
-				FormatHtml(reader, writer, indent, colors)
+				FormatHtml(reader, writer, options.Indent, options.Colors)
 			} else {
 				_, _ = fmt.Fprintf(writer, "%s\n", strings.TrimSpace(item.Text()))
 			}

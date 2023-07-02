@@ -92,7 +92,8 @@ func TestXPathQuery(t *testing.T) {
 	for _, testCase := range tests {
 		fileReader := getFileReader(path.Join("..", "..", "test", "data", "xml", testCase.input))
 		output := new(strings.Builder)
-		err := XPathQuery(fileReader, output, testCase.query, true, testCase.node, "  ", 0)
+		options := QueryOptions{WithTags: testCase.node, Indent: "  "}
+		err := XPathQuery(fileReader, output, testCase.query, true, options)
 		assert.Nil(t, err)
 		assert.Equal(t, testCase.result, strings.Trim(output.String(), "\n"))
 	}
@@ -117,7 +118,8 @@ func TestCSSQuery(t *testing.T) {
 	for _, testCase := range tests {
 		fileReader := getFileReader(path.Join("..", "..", "test", "data", "html", testCase.input))
 		output := new(strings.Builder)
-		err := CSSQuery(fileReader, output, testCase.query, testCase.attr, testCase.node, "  ", 0)
+		options := QueryOptions{WithTags: testCase.node, Indent: "  "}
+		err := CSSQuery(fileReader, output, testCase.query, testCase.attr, options)
 		assert.Nil(t, err)
 		assert.Equal(t, testCase.result, strings.Trim(output.String(), "\n"))
 	}

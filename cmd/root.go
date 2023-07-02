@@ -47,8 +47,14 @@ func NewRootCmd() *cobra.Command {
 			}
 
 			xPathQuery, singleNode := getXpathQuery(cmd.Flags())
-			nodeContent, _ := cmd.Flags().GetBool("node")
+			withTags, _ := cmd.Flags().GetBool("node")
 			colors := getColorMode(cmd.Flags())
+
+			options := utils.QueryOptions{
+				WithTags: withTags,
+				Indent:   indent,
+				Colors:   colors,
+			}
 
 			cssQuery, _ := cmd.Flags().GetString("query")
 			cssAttr, _ := cmd.Flags().GetString("attr")
@@ -62,9 +68,9 @@ func NewRootCmd() *cobra.Command {
 				defer pw.Close()
 
 				if xPathQuery != "" {
-					err = utils.XPathQuery(reader, pw, xPathQuery, singleNode, nodeContent, indent, colors)
+					err = utils.XPathQuery(reader, pw, xPathQuery, singleNode, options)
 				} else if cssQuery != "" {
-					err = utils.CSSQuery(reader, pw, cssQuery, cssAttr, nodeContent, indent, colors)
+					err = utils.CSSQuery(reader, pw, cssQuery, cssAttr, options)
 				} else {
 					var isHtmlFormatter bool
 					isHtmlFormatter, reader = isHTMLFormatterNeeded(cmd.Flags(), reader)
