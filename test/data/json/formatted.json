@@ -1,0 +1,25 @@
+{
+  "menu": {
+    "id": "file",
+    "value": 17,
+    "price": 100.32,
+    "popup": {
+      "menuitem": [
+        {
+          "value": "New",
+          "onclick": "CreateNewDoc()"
+        },
+        {
+          "value": "Open",
+          "onclick": "OpenDoc()",
+          "new": true
+        },
+        {
+          "value": "Close",
+          "onclick": "CloseDoc()",
+          "link": null
+        }
+      ]
+    }
+  }
+}

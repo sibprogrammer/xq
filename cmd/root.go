@@ -72,13 +72,18 @@ func NewRootCmd() *cobra.Command {
 				} else if cssQuery != "" {
 					err = utils.CSSQuery(reader, pw, cssQuery, cssAttr, options)
 				} else {
-					var isHtmlFormatter bool
-					isHtmlFormatter, reader = isHTMLFormatterNeeded(cmd.Flags(), reader)
+					var contentType utils.ContentType
+					contentType, reader = detectFormat(cmd.Flags(), reader)
 
-					if isHtmlFormatter {
+					switch contentType {
+					case utils.ContentHtml:
 						err = utils.FormatHtml(reader, pw, indent, colors)
-					} else {
+					case utils.ContentXml:
 						err = utils.FormatXml(reader, pw, indent, colors)
+					case utils.ContentJson:
+						err = utils.FormatJson(reader, pw, indent, colors)
+					default:
+						err = fmt.Errorf("unknown content type: %v", contentType)
 					}
 				}
 
@@ -198,18 +203,27 @@ func getColorMode(flags *pflag.FlagSet) int {
 	return colors
 }
 
-func isHTMLFormatterNeeded(flags *pflag.FlagSet, origReader io.Reader) (bool, io.Reader) {
+func detectFormat(flags *pflag.FlagSet, origReader io.Reader) (utils.ContentType, io.Reader) {
 	isHtmlFormatter, _ := flags.GetBool("html")
 	if isHtmlFormatter {
-		return isHtmlFormatter, origReader
+		return utils.ContentHtml, origReader
 	}
 
 	buf := make([]byte, 10)
 	length, err := origReader.Read(buf)
 	if err != nil {
-		return false, origReader
+		return utils.ContentText, origReader
 	}
 
 	reader := io.MultiReader(bytes.NewReader(buf[:length]), origReader)
-	return utils.IsHTML(string(buf)), reader
+
+	if utils.IsJSON(string(buf)) {
+		return utils.ContentJson, reader
+	}
+
+	if utils.IsHTML(string(buf)) {
+		return utils.ContentHtml, reader
+	}
+
+	return utils.ContentXml, reader
 }

@@ -64,14 +64,33 @@ func TestFormatHtml(t *testing.T) {
 	for unformattedFile, expectedFile := range files {
 		unformattedHtmlReader := getFileReader(path.Join("..", "..", "test", "data", "html", unformattedFile))
 
-		bytes, readErr := os.ReadFile(path.Join("..", "..", "test", "data", "html", expectedFile))
+		data, readErr := os.ReadFile(path.Join("..", "..", "test", "data", "html", expectedFile))
 		assert.Nil(t, readErr)
-		expectedHtml := string(bytes)
+		expectedHtml := string(data)
 
 		output := new(strings.Builder)
 		formatErr := FormatHtml(unformattedHtmlReader, output, "  ", ColorsDisabled)
 		assert.Nil(t, formatErr)
 		assert.Equal(t, expectedHtml, output.String())
+	}
+}
+
+func TestFormatJson(t *testing.T) {
+	files := map[string]string{
+		"unformatted.json": "formatted.json",
+	}
+
+	for unformattedFile, expectedFile := range files {
+		unformattedJsonReader := getFileReader(path.Join("..", "..", "test", "data", "json", unformattedFile))
+
+		data, readErr := os.ReadFile(path.Join("..", "..", "test", "data", "json", expectedFile))
+		assert.Nil(t, readErr)
+		expectedJson := string(data)
+
+		output := new(strings.Builder)
+		formatErr := FormatJson(unformattedJsonReader, output, "  ", ColorsDisabled)
+		assert.Nil(t, formatErr)
+		assert.Equal(t, expectedJson, output.String())
 	}
 }
 
@@ -132,6 +151,14 @@ func TestIsHTML(t *testing.T) {
 
 	assert.False(t, IsHTML("<?xml ?>"))
 	assert.False(t, IsHTML("<root></root>"))
+}
+
+func TestIsJSON(t *testing.T) {
+	assert.True(t, IsJSON(`{"key": "value"}`))
+	assert.True(t, IsJSON(`{"key": "value", "key2": "value2"}`))
+	assert.True(t, IsJSON(`[1, 2, 3]`))
+	assert.True(t, IsJSON(`   {}`))
+	assert.False(t, IsJSON(`<html></html>`))
 }
 
 func TestPagerPrint(t *testing.T) {

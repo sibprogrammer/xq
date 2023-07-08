@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bytes"
+	"encoding/json"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"reflect"
 	"regexp"
 	"strings"
 )
@@ -24,11 +26,32 @@ const (
 	ColorsDisabled
 )
 
+type ContentType int
+
+const (
+	ContentXml ContentType = iota
+	ContentHtml
+	ContentJson
+	ContentText
+)
+
 type QueryOptions struct {
 	WithTags bool
 	Indent   string
 	Colors   int
 }
+
+const (
+	jsonTokenTopValue = iota
+	jsonTokenArrayStart
+	jsonTokenArrayValue
+	jsonTokenArrayComma
+	jsonTokenObjectStart
+	jsonTokenObjectKey
+	jsonTokenObjectColon
+	jsonTokenObjectValue
+	jsonTokenObjectComma
+)
 
 func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) error {
 	decoder := xml.NewDecoder(reader)
@@ -344,6 +367,90 @@ func FormatHtml(reader io.Reader, writer io.Writer, indent string, colors int) e
 	return nil
 }
 
+func FormatJson(reader io.Reader, writer io.Writer, indent string, colors int) error {
+	decoder := json.NewDecoder(reader)
+	decoder.UseNumber()
+
+	if ColorsDefault != colors {
+		color.NoColor = colors == ColorsDisabled
+	}
+
+	tagColor := color.New(color.FgYellow).SprintFunc()
+	attrColor := color.New(color.FgHiBlue).SprintFunc()
+	valueColor := color.New(color.FgGreen).SprintFunc()
+
+	level := 0
+	suffix := ""
+	prefix := ""
+
+	for {
+		token, err := decoder.Token()
+
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			return err
+		}
+
+		v := reflect.ValueOf(*decoder)
+		tokenState := v.FieldByName("tokenState").Int()
+
+		switch tokenState {
+		case jsonTokenObjectColon:
+			suffix = ": "
+		case jsonTokenObjectComma:
+			suffix = ",\n" + strings.Repeat(indent, level)
+		case jsonTokenArrayComma:
+			suffix = ",\n" + strings.Repeat(indent, level)
+		}
+
+		switch tokenType := token.(type) {
+		case json.Delim:
+			switch rune(tokenType) {
+			case '{':
+				_, _ = fmt.Fprintf(writer, "%s%s\n", prefix, tagColor("{"))
+				level++
+				suffix = strings.Repeat(indent, level)
+			case '}':
+				level--
+				_, _ = fmt.Fprintf(writer, "\n%s%s", strings.Repeat(indent, level), tagColor("}"))
+				if tokenState == jsonTokenArrayComma {
+					suffix = ",\n" + strings.Repeat(indent, level)
+				}
+			case '[':
+				_, _ = fmt.Fprintf(writer, "%s%s\n", prefix, tagColor("["))
+				level++
+				suffix = strings.Repeat(indent, level)
+			case ']':
+				level--
+				_, _ = fmt.Fprintf(writer, "\n%s%s", strings.Repeat(indent, level), tagColor("]"))
+			}
+		case string:
+			value := valueColor(token)
+			if tokenState == jsonTokenObjectColon {
+				value = attrColor(token)
+			}
+			_, _ = fmt.Fprintf(writer, "%s\"%s\"", prefix, value)
+		case float64:
+			_, _ = fmt.Fprintf(writer, "%s%v", prefix, valueColor(token))
+		case json.Number:
+			_, _ = fmt.Fprintf(writer, "%s%v", prefix, valueColor(token))
+		case bool:
+			_, _ = fmt.Fprintf(writer, "%s%v", prefix, valueColor(token))
+		case nil:
+			_, _ = fmt.Fprintf(writer, "%s%s", prefix, valueColor("null"))
+		}
+
+		prefix = suffix
+	}
+
+	_, _ = fmt.Fprint(writer, "\n")
+
+	return nil
+}
+
 func IsHTML(input string) bool {
 	input = strings.ToLower(input)
 	htmlMarkers := []string{"html", "<!d", "<body"}
@@ -355,6 +462,12 @@ func IsHTML(input string) bool {
 	}
 
 	return false
+}
+
+func IsJSON(input string) bool {
+	input = strings.ToLower(input)
+	matched, _ := regexp.MatchString(`\s*[{\[]`, input)
+	return matched
 }
 
 func PagerPrint(reader io.Reader, writer io.Writer) error {
