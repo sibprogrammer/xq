@@ -247,8 +247,8 @@ func CSSQuery(reader io.Reader, writer io.Writer, query string, attr string, opt
 				var attrs []string
 				attrsStr := ""
 				for _, tagAttr := range node.Attr {
-					escapedValue, _ := escapeText(string(tagAttr.Val))
-					attrs = append(attrs, string(tagAttr.Key)+"=\""+escapedValue+"\"")
+					escapedValue, _ := escapeText(tagAttr.Val)
+					attrs = append(attrs, tagAttr.Key+"=\""+escapedValue+"\"")
 				}
 				if len(attrs) > 0 {
 					attrsStr = " " + strings.Join(attrs, " ")
