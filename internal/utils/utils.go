@@ -66,7 +66,7 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 
 	level := 0
 	hasContent := false
-	nsAliases := map[string]string{}
+	nsAliases := map[string]string{"http://www.w3.org/XML/1998/namespace": "xml"}
 	lastTagName := ""
 	startTagClosed := true
 
