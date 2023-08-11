@@ -67,7 +67,7 @@ func TestRootCmd(t *testing.T) {
 	_, err = execute(command, "nonexistent.xml")
 	assert.ErrorContains(t, err, "no such file or directory")
 
-	_, err = execute(command, "--indent", "0", xmlFilePath)
+	_, err = execute(command, "--indent", "-1", xmlFilePath)
 	assert.ErrorContains(t, err, "indent should be")
 
 	_, err = execute(command, "--indent", "incorrect", xmlFilePath)
