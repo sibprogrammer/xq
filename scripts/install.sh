@@ -7,7 +7,20 @@ INSTALL_DIR=/usr/local/bin/
 BINARY=xq
 LATEST_VERSION=$(curl -L -s -H 'Accept: application/json' $URL_PREFIX/releases/latest | sed -e 's/.*"tag_name":"v\([^"]*\)".*/\1/')
 PLATFORM=$(uname -s | tr A-Z a-z)
-[ "$(uname -m)" = "x86_64" ] && ARCH=amd64 || ARCH=arm64
+case "$(uname -m)" in
+  arm64)
+    ARCH=arm64
+    ;;
+  armv6l)
+    ARCH=armv6
+    ;;
+  armv7l)
+    ARCH=armv7
+    ;;
+  *)
+    ARCH=amd64
+    ;;
+esac
 ARCHIVE="${BINARY}_${LATEST_VERSION}_${PLATFORM}_${ARCH}.tar.gz"
 URL="$URL_PREFIX/releases/download/v${LATEST_VERSION}/$ARCHIVE"
 
