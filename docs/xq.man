@@ -24,6 +24,11 @@ Prints the synopsis and a list of options and exits.
 Uses the given number of spaces for indentation (default 2).
 .RE
 .PP
+\fB--color\fR | \fB-c\fR
+.RS 4
+Forces colorful output.
+.RE
+.PP
 \fB--no-color\fR
 .RS 4
 Disables colorful output (only formatting).
