@@ -69,6 +69,10 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 	nsAliases := map[string]string{"http://www.w3.org/XML/1998/namespace": "xml"}
 	lastTagName := ""
 	startTagClosed := true
+	newline := "\n"
+	if indent == "" {
+		newline = ""
+	}
 
 	if ColorsDefault != colors {
 		color.NoColor = colors == ColorsDisabled
@@ -100,14 +104,14 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 				_, _ = fmt.Fprintf(writer, " %s%s", attrComponents[0], attrColor("="+attrComponents[1]))
 			}
 
-			_, _ = fmt.Fprintf(writer, "%s\n", tagColor("?>"))
+			_, _ = fmt.Fprint(writer, tagColor("?>"), newline)
 		case xml.StartElement:
 			if !startTagClosed {
 				_, _ = fmt.Fprint(writer, tagColor(">"))
 				startTagClosed = true
 			}
 			if level > 0 {
-				_, _ = fmt.Fprint(writer, "\n", strings.Repeat(indent, level))
+				_, _ = fmt.Fprint(writer, newline, strings.Repeat(indent, level))
 			}
 			var attrs []string
 			for _, attr := range typedToken.Attr {
@@ -146,7 +150,7 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 
 			for index, commentLine := range strings.Split(string(typedToken), "\n") {
 				if !hasContent && level > 0 {
-					_, _ = fmt.Fprint(writer, "\n", strings.Repeat(indent, level))
+					_, _ = fmt.Fprint(writer, newline, strings.Repeat(indent, level))
 				}
 				if index == 0 {
 					_, _ = fmt.Fprint(writer, commentColor("<!--"))
@@ -156,7 +160,7 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 			_, _ = fmt.Fprint(writer, commentColor("-->"))
 
 			if level == 0 {
-				_, _ = fmt.Fprint(writer, "\n")
+				_, _ = fmt.Fprint(writer, newline)
 			}
 		case xml.EndElement:
 			level--
@@ -167,7 +171,7 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 						_, _ = fmt.Fprint(writer, tagColor(">"))
 						startTagClosed = true
 					}
-					_, _ = fmt.Fprint(writer, "\n", strings.Repeat(indent, level), tagColor("</"+currentTagName+">"))
+					_, _ = fmt.Fprint(writer, newline, strings.Repeat(indent, level), tagColor("</"+currentTagName+">"))
 				} else {
 					_, _ = fmt.Fprint(writer, tagColor("/>"))
 					startTagClosed = true
@@ -179,7 +183,7 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 			lastTagName = currentTagName
 		case xml.Directive:
 			_, _ = fmt.Fprint(writer, tagColor("<!"), string(typedToken), tagColor(">"))
-			_, _ = fmt.Fprint(writer, "\n", strings.Repeat(indent, level))
+			_, _ = fmt.Fprint(writer, newline, strings.Repeat(indent, level))
 		default:
 		}
 	}
@@ -280,6 +284,10 @@ func FormatHtml(reader io.Reader, writer io.Writer, indent string, colors int) e
 	hasContent := false
 	forceNewLine := false
 	selfClosingTags := getSelfClosingTags()
+	newline := "\n"
+	if indent == "" {
+		newline = ""
+	}
 
 	for {
 		token := tokenizer.Next()
@@ -299,7 +307,7 @@ func FormatHtml(reader io.Reader, writer io.Writer, indent string, colors int) e
 			_, _ = fmt.Fprint(writer, str)
 		case html.StartTagToken, html.SelfClosingTagToken:
 			if level > 0 {
-				_, _ = fmt.Fprint(writer, "\n", strings.Repeat(indent, level))
+				_, _ = fmt.Fprint(writer, newline, strings.Repeat(indent, level))
 			}
 
 			tagName, hasAttr := tokenizer.TagName()
@@ -339,7 +347,7 @@ func FormatHtml(reader io.Reader, writer io.Writer, indent string, colors int) e
 			tagName, _ := tokenizer.TagName()
 
 			if forceNewLine {
-				_, _ = fmt.Fprint(writer, "\n", strings.Repeat(indent, level))
+				_, _ = fmt.Fprint(writer, newline, strings.Repeat(indent, level))
 			}
 			_, _ = fmt.Fprint(writer, tagColor("</"+string(tagName)+">"))
 
@@ -347,17 +355,17 @@ func FormatHtml(reader io.Reader, writer io.Writer, indent string, colors int) e
 			forceNewLine = true
 		case html.DoctypeToken:
 			docType := tokenizer.Text()
-			_, _ = fmt.Fprintf(writer, "%s%s%s\n", tagColor("<!doctype "), string(docType), tagColor(">"))
+			_, _ = fmt.Fprint(writer, tagColor("<!doctype "), string(docType), tagColor(">"), newline)
 		case html.CommentToken:
 			for _, commentLine := range strings.Split(string(tokenizer.Raw()), "\n") {
 				if !hasContent && level > 0 {
-					_, _ = fmt.Fprint(writer, "\n", strings.Repeat(indent, level))
+					_, _ = fmt.Fprint(writer, newline, strings.Repeat(indent, level))
 				}
 				_, _ = fmt.Fprint(writer, commentColor(commentLine))
 			}
 
 			if level == 0 {
-				_, _ = fmt.Fprint(writer, "\n")
+				_, _ = fmt.Fprint(writer, newline)
 			}
 		}
 	}
@@ -382,6 +390,10 @@ func FormatJson(reader io.Reader, writer io.Writer, indent string, colors int) e
 	level := 0
 	suffix := ""
 	prefix := ""
+	newline := "\n"
+	if indent == "" {
+		newline = ""
+	}
 
 	for {
 		token, err := decoder.Token()
@@ -401,31 +413,31 @@ func FormatJson(reader io.Reader, writer io.Writer, indent string, colors int) e
 		case jsonTokenObjectColon:
 			suffix = ": "
 		case jsonTokenObjectComma:
-			suffix = ",\n" + strings.Repeat(indent, level)
+			suffix = "," + newline + strings.Repeat(indent, level)
 		case jsonTokenArrayComma:
-			suffix = ",\n" + strings.Repeat(indent, level)
+			suffix = "," + newline + strings.Repeat(indent, level)
 		}
 
 		switch tokenType := token.(type) {
 		case json.Delim:
 			switch rune(tokenType) {
 			case '{':
-				_, _ = fmt.Fprintf(writer, "%s%s\n", prefix, tagColor("{"))
+				_, _ = fmt.Fprint(writer, prefix, tagColor("{"), newline)
 				level++
 				suffix = strings.Repeat(indent, level)
 			case '}':
 				level--
-				_, _ = fmt.Fprintf(writer, "\n%s%s", strings.Repeat(indent, level), tagColor("}"))
+				_, _ = fmt.Fprint(writer, newline, strings.Repeat(indent, level), tagColor("}"))
 				if tokenState == jsonTokenArrayComma {
-					suffix = ",\n" + strings.Repeat(indent, level)
+					suffix = "," + newline + strings.Repeat(indent, level)
 				}
 			case '[':
-				_, _ = fmt.Fprintf(writer, "%s%s\n", prefix, tagColor("["))
+				_, _ = fmt.Fprint(writer, prefix, tagColor("["), newline)
 				level++
 				suffix = strings.Repeat(indent, level)
 			case ']':
 				level--
-				_, _ = fmt.Fprintf(writer, "\n%s%s", strings.Repeat(indent, level), tagColor("]"))
+				_, _ = fmt.Fprint(writer, newline, strings.Repeat(indent, level), tagColor("]"))
 			}
 		case string:
 			value := valueColor(token)
