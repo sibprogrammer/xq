@@ -106,3 +106,10 @@ If you have Go toolchain installed, you can use the following command to install
 ```
 go install github.com/sibprogrammer/xq@latest
 ```
+
+You can play with the `xq` utility using the Dockerized environment:
+
+```
+docker-compose run --rm xq
+xq /opt/examples/xml/unformatted.xml
+```

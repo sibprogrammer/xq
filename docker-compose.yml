@@ -1,0 +1,7 @@
+services:
+  xq:
+    build: .
+    volumes:
+      - ./test/data:/opt/examples
+    stdin_open: true
+    tty: true
