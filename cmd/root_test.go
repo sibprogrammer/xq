@@ -40,6 +40,14 @@ func TestRootCmd(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Contains(t, output, "This is not a real user")
 
+	output, err = execute(command, "--no-color", xmlFilePath)
+	assert.Nil(t, err)
+	assert.Contains(t, output, "first_name")
+
+	output, err = execute(command, "--indent", "0", xmlFilePath)
+	assert.Nil(t, err)
+	assert.NotContains(t, output, "\n")
+
 	output, err = execute(command, "--tab", xmlFilePath)
 	assert.Nil(t, err)
 	assert.Contains(t, output, "\t")
