@@ -32,6 +32,7 @@ func TestRootCmd(t *testing.T) {
 	var err error
 	xmlFilePath := path.Join("..", "test", "data", "xml", "unformatted.xml")
 	htmlFilePath := path.Join("..", "test", "data", "html", "unformatted.html")
+	jsonFilePath := path.Join("..", "test", "data", "json", "unformatted.json")
 
 	output, err = execute(command)
 	assert.Contains(t, output, "Usage:")
@@ -47,6 +48,10 @@ func TestRootCmd(t *testing.T) {
 	output, err = execute(command, "--indent", "0", xmlFilePath)
 	assert.Nil(t, err)
 	assert.NotContains(t, output, "\n")
+
+	output, err = execute(command, jsonFilePath)
+	assert.Nil(t, err)
+	assert.Contains(t, output, "{")
 
 	output, err = execute(command, "--tab", xmlFilePath)
 	assert.Nil(t, err)
