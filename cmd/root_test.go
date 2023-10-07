@@ -35,6 +35,7 @@ func TestRootCmd(t *testing.T) {
 	jsonFilePath := path.Join("..", "test", "data", "json", "unformatted.json")
 
 	output, err = execute(command)
+	assert.Nil(t, err)
 	assert.Contains(t, output, "Usage:")
 
 	output, err = execute(command, xmlFilePath)
