@@ -1,17 +1,25 @@
 package main
 
 import (
+	_ "embed"
 	"fmt"
 	"github.com/sibprogrammer/xq/cmd"
+	"strings"
 )
 
 var (
-	commit  = "000000"
-	date    = "unknown"
-	version = "0.0.0"
+	commit = "000000"
+	date   = ""
 )
 
+//go:embed version
+var version string
+
 func main() {
-	cmd.Version = fmt.Sprintf("%s (%s, %s)", version, date, commit)
+	fullVersion := strings.TrimSpace(version)
+	if date != "" {
+		fullVersion += fmt.Sprintf(" (%s, %s)", date, commit)
+	}
+	cmd.Version = fullVersion
 	cmd.Execute()
 }
