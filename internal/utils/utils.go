@@ -133,6 +133,7 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 			lastTagName = currentTagName
 			startTagClosed = false
 			level++
+			hasContent = false
 		case xml.CharData:
 			str := normalizeSpaces(string(typedToken), indent, level)
 			hasContent = str != ""
@@ -558,6 +559,8 @@ func normalizeSpaces(input string, indent string, level int) string {
 	if regexpTail.MatchString(input) {
 		input = strings.TrimRight(input, " \n")
 		input += "\n" + strings.Repeat(indent, level-1)
+	} else {
+		input = strings.TrimRight(input, " ")
 	}
 
 	return input

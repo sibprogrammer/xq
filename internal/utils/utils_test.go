@@ -35,6 +35,7 @@ func TestFormatXml(t *testing.T) {
 		"unformatted10.xml": "formatted10.xml",
 		"unformatted11.xml": "formatted11.xml",
 		"unformatted12.xml": "formatted12.xml",
+		"unformatted13.xml": "formatted13.xml",
 	}
 
 	for unformattedFile, expectedFile := range files {
