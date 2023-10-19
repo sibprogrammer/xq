@@ -409,15 +409,6 @@ func FormatJson(reader io.Reader, writer io.Writer, indent string, colors int) e
 		v := reflect.ValueOf(*decoder)
 		tokenState := v.FieldByName("tokenState").Int()
 
-		switch tokenState {
-		case jsonTokenObjectColon:
-			suffix = ": "
-		case jsonTokenObjectComma:
-			suffix = "," + newline + strings.Repeat(indent, level)
-		case jsonTokenArrayComma:
-			suffix = "," + newline + strings.Repeat(indent, level)
-		}
-
 		switch tokenType := token.(type) {
 		case json.Delim:
 			switch rune(tokenType) {
@@ -453,6 +444,15 @@ func FormatJson(reader io.Reader, writer io.Writer, indent string, colors int) e
 			_, _ = fmt.Fprintf(writer, "%s%v", prefix, valueColor(token))
 		case nil:
 			_, _ = fmt.Fprintf(writer, "%s%s", prefix, valueColor("null"))
+		}
+
+		switch tokenState {
+		case jsonTokenObjectColon:
+			suffix = ": "
+		case jsonTokenObjectComma:
+			suffix = "," + newline + strings.Repeat(indent, level)
+		case jsonTokenArrayComma:
+			suffix = "," + newline + strings.Repeat(indent, level)
 		}
 
 		prefix = suffix
