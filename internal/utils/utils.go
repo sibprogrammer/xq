@@ -16,6 +16,7 @@ import (
 	"os/exec"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -431,11 +432,12 @@ func FormatJson(reader io.Reader, writer io.Writer, indent string, colors int) e
 				_, _ = fmt.Fprint(writer, newline, strings.Repeat(indent, level), tagColor("]"))
 			}
 		case string:
-			value := valueColor(token)
+			escapedToken := strconv.Quote(token.(string))
+			value := valueColor(escapedToken)
 			if tokenState == jsonTokenObjectColon {
-				value = attrColor(token)
+				value = attrColor(escapedToken)
 			}
-			_, _ = fmt.Fprintf(writer, "%s\"%s\"", prefix, value)
+			_, _ = fmt.Fprintf(writer, "%s%s", prefix, value)
 		case float64:
 			_, _ = fmt.Fprintf(writer, "%s%v", prefix, valueColor(token))
 		case json.Number:

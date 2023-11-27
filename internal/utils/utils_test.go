@@ -81,6 +81,7 @@ func TestFormatJson(t *testing.T) {
 	files := map[string]string{
 		"unformatted.json":  "formatted.json",
 		"unformatted2.json": "formatted2.json",
+		"unformatted3.json": "formatted3.json",
 	}
 
 	for unformattedFile, expectedFile := range files {
