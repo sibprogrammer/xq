@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/antchfx/xmlquery"
+	"github.com/antchfx/xpath"
 	"github.com/fatih/color"
 	"golang.org/x/net/html"
 	"golang.org/x/text/encoding/ianaindex"
@@ -214,12 +215,36 @@ func XPathQuery(reader io.Reader, writer io.Writer, query string, singleNode boo
 		if n := xmlquery.FindOne(doc, query); n != nil {
 			return printNodeContent(writer, n, options)
 		}
-	} else {
+	} else if options.WithTags {
 		for _, n := range xmlquery.Find(doc, query) {
 			err := printNodeContent(writer, n, options)
 			if err != nil {
 				return err
 			}
+		}
+	} else {
+		expr, _ := xpath.Compile(query)
+		val := expr.Evaluate(xmlquery.CreateXPathNavigator(doc))
+
+		switch typedVal := val.(type) {
+		case float64:
+			_, err = fmt.Fprintf(writer, "%.0f\n", typedVal)
+		case string:
+			_, err = fmt.Fprintf(writer, "%s\n", strings.TrimSpace(typedVal))
+		case *xpath.NodeIterator:
+			for typedVal.MoveNext() {
+				typedVal.Current()
+				_, err = fmt.Fprintf(writer, "%s\n", strings.TrimSpace(typedVal.Current().Value()))
+				if err != nil {
+					break
+				}
+			}
+		default:
+			return fmt.Errorf("unknown type error: %v", val)
+		}
+
+		if err != nil {
+			return err
 		}
 	}
 

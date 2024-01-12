@@ -102,21 +102,23 @@ func TestXPathQuery(t *testing.T) {
 	type test struct {
 		input  string
 		node   bool
+		single bool
 		query  string
 		result string
 	}
 
 	tests := []test{
-		{input: "formatted.xml", node: false, query: "//first_name", result: "John"},
-		{input: "unformatted8.xml", node: false, query: "//title", result: "Some Title"},
-		{input: "unformatted8.xml", node: true, query: "//title", result: "<title>Some Title</title>"},
+		{input: "formatted.xml", node: false, single: true, query: "//first_name", result: "John"},
+		{input: "unformatted8.xml", node: false, single: true, query: "//title", result: "Some Title"},
+		{input: "unformatted8.xml", node: true, single: true, query: "//title", result: "<title>Some Title</title>"},
+		{input: "unformatted8.xml", node: false, single: false, query: "count(//link)", result: "2"},
 	}
 
 	for _, testCase := range tests {
 		fileReader := getFileReader(path.Join("..", "..", "test", "data", "xml", testCase.input))
 		output := new(strings.Builder)
 		options := QueryOptions{WithTags: testCase.node, Indent: "  "}
-		err := XPathQuery(fileReader, output, testCase.query, true, options)
+		err := XPathQuery(fileReader, output, testCase.query, testCase.single, options)
 		assert.Nil(t, err)
 		assert.Equal(t, testCase.result, strings.Trim(output.String(), "\n"))
 	}
