@@ -11,6 +11,9 @@ case "$(uname -m)" in
   arm64)
     ARCH=arm64
     ;;
+  aarch64)
+    ARCH=arm64
+    ;;
   armv6l)
     ARCH=armv6
     ;;
