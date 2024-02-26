@@ -3,7 +3,7 @@ module github.com/sibprogrammer/xq
 go 1.21
 
 require (
-	github.com/PuerkitoBio/goquery v1.8.1
+	github.com/PuerkitoBio/goquery v1.9.0
 	github.com/antchfx/xmlquery v1.3.18
 	github.com/antchfx/xpath v1.2.5
 	github.com/fatih/color v1.16.0
