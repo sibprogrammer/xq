@@ -3,7 +3,7 @@ module github.com/sibprogrammer/xq
 go 1.22
 
 require (
-	github.com/PuerkitoBio/goquery v1.9.1
+	github.com/PuerkitoBio/goquery v1.9.2
 	github.com/antchfx/xmlquery v1.4.0
 	github.com/antchfx/xpath v1.3.0
 	github.com/fatih/color v1.16.0
@@ -34,7 +34,6 @@ require (
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/spf13/cast v1.6.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
-	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/exp v0.0.0-20240409090435-93d18d7e34b8 // indirect
 	golang.org/x/sys v0.19.0 // indirect
