@@ -1,15 +1,17 @@
 package cmd
 
 import (
+	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
 	"github.com/sibprogrammer/xq/internal/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 	"io"
 	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -17,6 +19,17 @@ import (
 var Version string
 
 var rootCmd = NewRootCmd()
+
+type Config struct {
+	indent  int
+	tab     bool
+	noColor bool
+	color   bool
+	html    bool
+	node    bool
+}
+
+var config Config
 
 func NewRootCmd() *cobra.Command {
 	return &cobra.Command{
@@ -99,7 +112,7 @@ func NewRootCmd() *cobra.Command {
 }
 
 func InitFlags(cmd *cobra.Command) {
-	if err := initViper(); err != nil {
+	if err := initConfig(); err != nil {
 		fmt.Printf("Error while reading the config file: %v\n", err)
 		os.Exit(1)
 	}
@@ -110,18 +123,18 @@ func InitFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolP("version", "v", false, "Print version information")
 	cmd.PersistentFlags().StringP("xpath", "x", "", "Extract the node(s) from XML")
 	cmd.PersistentFlags().StringP("extract", "e", "", "Extract a single node from XML")
-	cmd.PersistentFlags().Bool("tab", viper.GetBool("tab"), "Use tabs for indentation")
-	cmd.PersistentFlags().Int("indent", viper.GetInt("indent"),
+	cmd.PersistentFlags().Bool("tab", config.tab, "Use tabs for indentation")
+	cmd.PersistentFlags().Int("indent", config.indent,
 		"Use the given number of spaces for indentation")
-	cmd.PersistentFlags().Bool("no-color", viper.GetBool("no-color"), "Disable colorful output")
-	cmd.PersistentFlags().BoolP("color", "c", viper.GetBool("color"),
+	cmd.PersistentFlags().Bool("no-color", config.noColor, "Disable colorful output")
+	cmd.PersistentFlags().BoolP("color", "c", config.color,
 		"Force colorful output")
-	cmd.PersistentFlags().BoolP("html", "m", viper.GetBool("html"), "Use HTML formatter")
+	cmd.PersistentFlags().BoolP("html", "m", config.html, "Use HTML formatter")
 	cmd.PersistentFlags().StringP("query", "q", "",
 		"Extract the node(s) using CSS selector")
 	cmd.PersistentFlags().StringP("attr", "a", "",
 		"Extract an attribute value instead of node content for provided CSS query")
-	cmd.PersistentFlags().BoolP("node", "n", viper.GetBool("node"),
+	cmd.PersistentFlags().BoolP("node", "n", config.node,
 		"Return the node content instead of text")
 }
 
@@ -158,20 +171,47 @@ func getIndent(flags *pflag.FlagSet) (string, error) {
 	return indent, nil
 }
 
-func initViper() error {
-	viper.SetConfigName(".xq")
-	viper.SetConfigType("env")
-	viper.AddConfigPath("$HOME")
-	viper.AddConfigPath(".")
+func initConfig() error {
+	config.indent = 2
+	config.tab = false
+	config.noColor = false
+	config.color = false
+	config.html = false
+	config.node = false
 
-	viper.SetDefault("indent", 2)
-	viper.SetDefault("tab", false)
-	viper.SetDefault("no-color", false)
-	viper.SetDefault("color", false)
+	homeDir, _ := os.UserHomeDir()
 
-	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-			return err
+	file, err := os.Open(filepath.Join(homeDir, ".xq"))
+	if os.IsNotExist(err) {
+		return nil
+	}
+
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		var text = scanner.Text()
+		text = strings.TrimSpace(text)
+		if strings.HasPrefix(text, "#") || len(text) == 0 {
+			continue
+		}
+		var parts = strings.Split(text, "=")
+		if len(parts) != 2 {
+			continue
+		}
+		option, value := parts[0], parts[1]
+		option = strings.TrimSpace(option)
+		value = strings.TrimSpace(value)
+
+		switch option {
+		case "indent":
+			config.indent, _ = strconv.Atoi(value)
+		case "tab":
+			config.tab, _ = strconv.ParseBool(value)
+		case "no-color":
+			config.noColor, _ = strconv.ParseBool(value)
+		case "color":
+			config.color, _ = strconv.ParseBool(value)
 		}
 	}
 
