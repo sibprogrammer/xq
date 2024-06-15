@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
@@ -10,8 +9,6 @@ import (
 	"github.com/spf13/pflag"
 	"io"
 	"os"
-	"path/filepath"
-	"strconv"
 	"strings"
 )
 
@@ -19,17 +16,6 @@ import (
 var Version string
 
 var rootCmd = NewRootCmd()
-
-type Config struct {
-	indent  int
-	tab     bool
-	noColor bool
-	color   bool
-	html    bool
-	node    bool
-}
-
-var config Config
 
 func NewRootCmd() *cobra.Command {
 	return &cobra.Command{
@@ -78,7 +64,9 @@ func NewRootCmd() *cobra.Command {
 			pr, pw := io.Pipe()
 
 			go func() {
-				defer pw.Close()
+				defer func() {
+					_ = pw.Close()
+				}()
 
 				if xPathQuery != "" {
 					err = utils.XPathQuery(reader, pw, xPathQuery, singleNode, options)
@@ -112,7 +100,7 @@ func NewRootCmd() *cobra.Command {
 }
 
 func InitFlags(cmd *cobra.Command) {
-	if err := initConfig(); err != nil {
+	if err := utils.LoadConfig(); err != nil {
 		fmt.Printf("Error while reading the config file: %v\n", err)
 		os.Exit(1)
 	}
@@ -123,18 +111,18 @@ func InitFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolP("version", "v", false, "Print version information")
 	cmd.PersistentFlags().StringP("xpath", "x", "", "Extract the node(s) from XML")
 	cmd.PersistentFlags().StringP("extract", "e", "", "Extract a single node from XML")
-	cmd.PersistentFlags().Bool("tab", config.tab, "Use tabs for indentation")
-	cmd.PersistentFlags().Int("indent", config.indent,
+	cmd.PersistentFlags().Bool("tab", utils.GetConfig().Tab, "Use tabs for indentation")
+	cmd.PersistentFlags().Int("indent", utils.GetConfig().Indent,
 		"Use the given number of spaces for indentation")
-	cmd.PersistentFlags().Bool("no-color", config.noColor, "Disable colorful output")
-	cmd.PersistentFlags().BoolP("color", "c", config.color,
+	cmd.PersistentFlags().Bool("no-color", utils.GetConfig().NoColor, "Disable colorful output")
+	cmd.PersistentFlags().BoolP("color", "c", utils.GetConfig().Color,
 		"Force colorful output")
-	cmd.PersistentFlags().BoolP("html", "m", config.html, "Use HTML formatter")
+	cmd.PersistentFlags().BoolP("html", "m", utils.GetConfig().Html, "Use HTML formatter")
 	cmd.PersistentFlags().StringP("query", "q", "",
 		"Extract the node(s) using CSS selector")
 	cmd.PersistentFlags().StringP("attr", "a", "",
 		"Extract an attribute value instead of node content for provided CSS query")
-	cmd.PersistentFlags().BoolP("node", "n", config.node,
+	cmd.PersistentFlags().BoolP("node", "n", utils.GetConfig().Node,
 		"Return the node content instead of text")
 }
 
@@ -169,53 +157,6 @@ func getIndent(flags *pflag.FlagSet) (string, error) {
 	}
 
 	return indent, nil
-}
-
-func initConfig() error {
-	config.indent = 2
-	config.tab = false
-	config.noColor = false
-	config.color = false
-	config.html = false
-	config.node = false
-
-	homeDir, _ := os.UserHomeDir()
-
-	file, err := os.Open(filepath.Join(homeDir, ".xq"))
-	if os.IsNotExist(err) {
-		return nil
-	}
-
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		var text = scanner.Text()
-		text = strings.TrimSpace(text)
-		if strings.HasPrefix(text, "#") || len(text) == 0 {
-			continue
-		}
-		var parts = strings.Split(text, "=")
-		if len(parts) != 2 {
-			continue
-		}
-		option, value := parts[0], parts[1]
-		option = strings.TrimSpace(option)
-		value = strings.TrimSpace(value)
-
-		switch option {
-		case "indent":
-			config.indent, _ = strconv.Atoi(value)
-		case "tab":
-			config.tab, _ = strconv.ParseBool(value)
-		case "no-color":
-			config.noColor, _ = strconv.ParseBool(value)
-		case "color":
-			config.color, _ = strconv.ParseBool(value)
-		}
-	}
-
-	return nil
 }
 
 func getXpathQuery(flags *pflag.FlagSet) (query string, single bool) {
