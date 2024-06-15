@@ -3,7 +3,6 @@ package utils
 import (
 	"bufio"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -19,7 +18,7 @@ type ConfigOptions struct {
 
 var config ConfigOptions
 
-func LoadConfig() error {
+func LoadConfig(fileName string) error {
 	config.Indent = 2
 	config.Tab = false
 	config.NoColor = false
@@ -27,9 +26,7 @@ func LoadConfig() error {
 	config.Html = false
 	config.Node = false
 
-	homeDir, _ := os.UserHomeDir()
-
-	file, err := os.Open(filepath.Join(homeDir, ".xq"))
+	file, err := os.Open(fileName)
 	if os.IsNotExist(err) {
 		return nil
 	} else if err != nil {

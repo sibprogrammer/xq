@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/pflag"
 	"io"
 	"os"
+	"path"
 	"strings"
 )
 
@@ -100,7 +101,9 @@ func NewRootCmd() *cobra.Command {
 }
 
 func InitFlags(cmd *cobra.Command) {
-	if err := utils.LoadConfig(); err != nil {
+	homeDir, _ := os.UserHomeDir()
+	configFile := path.Join(homeDir, ".xq")
+	if err := utils.LoadConfig(configFile); err != nil {
 		fmt.Printf("Error while reading the config file: %v\n", err)
 		os.Exit(1)
 	}
