@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/antchfx/xmlquery"
@@ -230,6 +231,10 @@ func XPathQuery(reader io.Reader, writer io.Writer, query string, singleNode boo
 		}
 	} else {
 		expr, _ := xpath.Compile(query)
+		if expr == nil {
+			return errors.New("unable to parse the XPath query")
+		}
+
 		val := expr.Evaluate(xmlquery.CreateXPathNavigator(doc))
 
 		switch typedVal := val.(type) {

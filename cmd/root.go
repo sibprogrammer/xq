@@ -90,7 +90,7 @@ func NewRootCmd() *cobra.Command {
 				}
 
 				if err != nil {
-					fmt.Println(err)
+					fmt.Println("Error:", err)
 					os.Exit(1)
 				}
 			}()
