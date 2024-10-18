@@ -2,15 +2,18 @@ package cmd
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/sibprogrammer/xq/internal/utils"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"io"
 	"os"
 	"path"
 	"strings"
+
+	"github.com/antchfx/xmlquery"
+	"github.com/sibprogrammer/xq/internal/utils"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // Version information
@@ -41,6 +44,7 @@ func NewRootCmd() *cobra.Command {
 
 				reader = os.Stdin
 			} else {
+				var err error
 				if reader, err = os.Open(args[len(args)-1]); err != nil {
 					return err
 				}
@@ -61,14 +65,16 @@ func NewRootCmd() *cobra.Command {
 			if cssAttr != "" && cssQuery == "" {
 				return errors.New("query option (-q) is missed for attribute selection")
 			}
+			jsonOutputMode, _ := cmd.Flags().GetBool("json")
 
 			pr, pw := io.Pipe()
+			errChan := make(chan error, 1)
 
 			go func() {
-				defer func() {
-					_ = pw.Close()
-				}()
+				defer close(errChan)
+				defer pw.Close()
 
+				var err error
 				if xPathQuery != "" {
 					err = utils.XPathQuery(reader, pw, xPathQuery, singleNode, options)
 				} else if cssQuery != "" {
@@ -76,26 +82,30 @@ func NewRootCmd() *cobra.Command {
 				} else {
 					var contentType utils.ContentType
 					contentType, reader = detectFormat(cmd.Flags(), reader)
-
-					switch contentType {
-					case utils.ContentHtml:
-						err = utils.FormatHtml(reader, pw, indent, colors)
-					case utils.ContentXml:
-						err = utils.FormatXml(reader, pw, indent, colors)
-					case utils.ContentJson:
-						err = utils.FormatJson(reader, pw, indent, colors)
-					default:
-						err = fmt.Errorf("unknown content type: %v", contentType)
+					if jsonOutputMode {
+						err = processAsJSON(cmd.Flags(), reader, pw, contentType)
+					} else {
+						switch contentType {
+						case utils.ContentHtml:
+							err = utils.FormatHtml(reader, pw, indent, colors)
+						case utils.ContentXml:
+							err = utils.FormatXml(reader, pw, indent, colors)
+						case utils.ContentJson:
+							err = utils.FormatJson(reader, pw, indent, colors)
+						default:
+							err = fmt.Errorf("unknown content type: %v", contentType)
+						}
 					}
 				}
 
-				if err != nil {
-					fmt.Println("Error:", err)
-					os.Exit(1)
-				}
+				errChan <- err
 			}()
 
-			return utils.PagerPrint(pr, cmd.OutOrStdout())
+			if err := utils.PagerPrint(pr, cmd.OutOrStdout()); err != nil {
+				return err
+			}
+
+			return <-errChan
 		},
 	}
 }
@@ -127,6 +137,9 @@ func InitFlags(cmd *cobra.Command) {
 		"Extract an attribute value instead of node content for provided CSS query")
 	cmd.PersistentFlags().BoolP("node", "n", utils.GetConfig().Node,
 		"Return the node content instead of text")
+	cmd.PersistentFlags().BoolP("json", "j", false, "Output the result as JSON")
+	cmd.PersistentFlags().Bool("compact", false, "Compact JSON output (no indentation)")
+	cmd.PersistentFlags().IntP("depth", "d", -1, "Maximum nesting depth for JSON output (-1 for unlimited)")
 }
 
 func Execute() {
@@ -193,7 +206,7 @@ func detectFormat(flags *pflag.FlagSet, origReader io.Reader) (utils.ContentType
 		return utils.ContentHtml, origReader
 	}
 
-	buf := make([]byte, 10)
+	buf := make([]byte, 20)
 	length, err := origReader.Read(buf)
 	if err != nil {
 		return utils.ContentText, origReader
@@ -210,4 +223,55 @@ func detectFormat(flags *pflag.FlagSet, origReader io.Reader) (utils.ContentType
 	}
 
 	return utils.ContentXml, reader
+}
+
+func processAsJSON(flags *pflag.FlagSet, reader io.Reader, w io.Writer, contentType utils.ContentType) error {
+	var (
+		jsonCompact bool
+		jsonDepth   int
+		result      interface{}
+	)
+	jsonCompact, _ = flags.GetBool("compact")
+	if flags.Changed("depth") {
+		jsonDepth, _ = flags.GetInt("depth")
+	} else {
+		jsonDepth = -1
+	}
+
+	switch contentType {
+	case utils.ContentXml, utils.ContentHtml:
+		doc, err := xmlquery.Parse(reader)
+		if err != nil {
+			return fmt.Errorf("error while parsing XML: %w", err)
+		}
+		result = utils.NodeToJSON(doc, jsonDepth)
+	case utils.ContentJson:
+		decoder := json.NewDecoder(reader)
+		if err := decoder.Decode(&result); err != nil {
+			return fmt.Errorf("error while parsing JSON: %w", err)
+		}
+	default:
+		// Treat as plain text
+		content, err := io.ReadAll(reader)
+		if err != nil {
+			return fmt.Errorf("error while reading content: %w", err)
+		}
+		result = map[string]interface{}{
+			"text": string(content),
+		}
+	}
+
+	var encoder *json.Encoder
+	if jsonCompact {
+		encoder = json.NewEncoder(w)
+	} else {
+		encoder = json.NewEncoder(w)
+		encoder.SetIndent("", "  ")
+	}
+
+	if err := encoder.Encode(result); err != nil {
+		return fmt.Errorf("error while encoding JSON: %v", err)
+	}
+
+	return nil
 }
