@@ -2,11 +2,16 @@ package cmd
 
 import (
 	"bytes"
-	"github.com/spf13/cobra"
-	"github.com/stretchr/testify/assert"
+	"encoding/json"
+	"fmt"
 	"path"
 	"strings"
 	"testing"
+
+	"github.com/sibprogrammer/xq/internal/utils"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+	"github.com/stretchr/testify/assert"
 )
 
 func execute(cmd *cobra.Command, args ...string) (string, error) {
@@ -86,4 +91,102 @@ func TestRootCmd(t *testing.T) {
 
 	_, err = execute(command, "--indent", "incorrect", xmlFilePath)
 	assert.ErrorContains(t, err, "invalid argument")
+}
+
+func TestProcessAsJSON(t *testing.T) {
+	tests := []struct {
+		name        string
+		input       string
+		contentType utils.ContentType
+		flags       map[string]interface{}
+		expected    map[string]interface{}
+		wantErr     bool
+	}{
+		{
+			name:        "Simple XML",
+			input:       "<root><child>value</child></root>",
+			contentType: utils.ContentXml,
+			expected: map[string]interface{}{
+				"root": map[string]interface{}{
+					"child": "value",
+				},
+			},
+		},
+		{name: "Simple JSON",
+			input:       `{"root": {"child": "value"}}`,
+			contentType: utils.ContentJson,
+			expected: map[string]interface{}{
+				"root": map[string]interface{}{
+					"child": "value",
+				},
+			},
+		},
+		{
+			name:        "Simple HTML",
+			input:       "<html><body><p>text</p></body></html>",
+			contentType: utils.ContentHtml,
+			expected: map[string]interface{}{
+				"html": map[string]interface{}{
+					"body": map[string]interface{}{
+						"p": "text",
+					},
+				},
+			},
+		},
+		{
+			name:        "Plain text",
+			input:       "text",
+			contentType: utils.ContentText,
+			expected: map[string]interface{}{
+				"text": "text",
+			},
+		},
+		{
+			name:    "invalid input",
+			input:   "thinking>\nI'll analyze each command and its output:\n</thinking>",
+			wantErr: true,
+		},
+		{
+			name: "combined",
+			expected: map[string]interface{}{
+				"#text":    "Thank you\nBye.",
+				"thinking": "1. woop",
+			},
+			input: `Thank you
+<thinking>
+1. woop
+</thinking>
+
+Bye.`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Set up flags
+			flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+			flags.Bool("compact", false, "")
+			flags.Int("depth", -1, "")
+			for name, v := range tt.flags {
+				_ = flags.Set(name, fmt.Sprint(v))
+			}
+
+			reader := strings.NewReader(tt.input)
+			var output bytes.Buffer
+
+			err := processAsJSON(flags, reader, &output, tt.contentType)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+
+				var resultMap map[string]interface{}
+				err = json.Unmarshal(output.Bytes(), &resultMap)
+				assert.NoError(t, err)
+
+				assert.Equal(t, tt.expected, resultMap)
+			}
+		})
+	}
 }
