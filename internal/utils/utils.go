@@ -59,6 +59,9 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 	decoder := xml.NewDecoder(reader)
 	decoder.Strict = false
 	decoder.CharsetReader = func(charset string, input io.Reader) (io.Reader, error) {
+		if strings.ToLower(charset) == "utf-16" {
+			charset = "utf-8"
+		}
 		e, err := ianaindex.MIME.Encoding(charset)
 		if err != nil {
 			return nil, err
