@@ -172,7 +172,9 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 				_, _ = fmt.Fprint(writer, newline)
 			}
 		case xml.EndElement:
-			level--
+			if level > 0 {
+				level--
+			}
 			currentTagName := getTokenFullName(typedToken.Name, nsAliases)
 			if !hasContent {
 				if lastTagName != currentTagName {
@@ -383,7 +385,9 @@ func FormatHtml(reader io.Reader, writer io.Writer, indent string, colors int) e
 				forceNewLine = false
 			}
 		case html.EndTagToken:
-			level--
+			if level > 0 {
+				level--
+			}
 			tagName, _ := tokenizer.TagName()
 
 			if forceNewLine {
@@ -457,7 +461,9 @@ func FormatJson(reader io.Reader, writer io.Writer, indent string, colors int) e
 				level++
 				suffix = strings.Repeat(indent, level)
 			case '}':
-				level--
+				if level > 0 {
+					level--
+				}
 				_, _ = fmt.Fprint(writer, newline, strings.Repeat(indent, level), tagColor("}"))
 				if tokenState == jsonTokenArrayComma {
 					suffix = "," + newline + strings.Repeat(indent, level)
@@ -467,7 +473,9 @@ func FormatJson(reader io.Reader, writer io.Writer, indent string, colors int) e
 				level++
 				suffix = strings.Repeat(indent, level)
 			case ']':
-				level--
+				if level > 0 {
+					level--
+				}
 				_, _ = fmt.Fprint(writer, newline, strings.Repeat(indent, level), tagColor("]"))
 			}
 		case string:
