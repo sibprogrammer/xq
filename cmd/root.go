@@ -260,18 +260,14 @@ func processAsJSON(flags *pflag.FlagSet, reader io.Reader, w io.Writer, contentT
 			"text": string(content),
 		}
 	}
-
-	var encoder *json.Encoder
-	if jsonCompact {
-		encoder = json.NewEncoder(w)
-	} else {
-		encoder = json.NewEncoder(w)
-		encoder.SetIndent("", "  ")
+	jsonData, err := json.Marshal(result)
+	if err != nil {
+		return fmt.Errorf("error while marshaling JSON: %w", err)
 	}
-
-	if err := encoder.Encode(result); err != nil {
-		return fmt.Errorf("error while encoding JSON: %v", err)
+	indent := ""
+	if !jsonCompact {
+		indent = "  "
 	}
-
-	return nil
+	colors := getColorMode(flags)
+	return utils.FormatJson(bytes.NewReader(jsonData), w, indent, colors)
 }
