@@ -206,7 +206,7 @@ func detectFormat(flags *pflag.FlagSet, origReader io.Reader) (utils.ContentType
 		return utils.ContentHtml, origReader
 	}
 
-	buf := make([]byte, 20)
+	buf := make([]byte, 10)
 	length, err := origReader.Read(buf)
 	if err != nil {
 		return utils.ContentText, origReader
