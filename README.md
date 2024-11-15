@@ -73,6 +73,19 @@ Extract part of HTML with tags (not only text content) using CSS selector:
 cat test/data/html/unformatted.html | xq -n -q "head"
 ```
 
+Output the result as JSON:
+
+```
+cat test/data/xml/unformatted.xml | xq -j
+```
+
+This will output the result in JSON format, preserving the XML structure. The JSON output will be an object where:
+- XML elements become object keys
+- Attributes are prefixed with "@"
+- Text content is stored under "#text" if the element has attributes or child elements
+- Repeated elements are automatically converted to arrays
+- Elements with only text content are represented as strings
+
 # Installation
 
 The preferable ways to install the utility are described below.
@@ -116,16 +129,3 @@ You can play with the `xq` utility using the Dockerized environment:
 docker-compose run --rm xq
 xq /opt/examples/xml/unformatted.xml
 ```
-
-Output the result as JSON:
-
-```
-cat test/data/xml/unformatted.xml | xq -j
-```
-
-This will output the result in JSON format, preserving the XML structure. The JSON output will be an object where:
-- XML elements become object keys
-- Attributes are prefixed with "@"
-- Text content is stored under "#text" if the element has attributes or child elements
-- Repeated elements are automatically converted to arrays
-- Elements with only text content are represented as strings
