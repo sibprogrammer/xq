@@ -1,0 +1,6 @@
+{
+  "root": {
+    "@attr": "value",
+    "child": "text"
+  }
+}

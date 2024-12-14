@@ -1,0 +1,6 @@
+<root>
+    <child1>
+        <grandchild>value</grandchild>
+    </child1>
+    <child2>text</child2>
+</root>

@@ -1,96 +1,47 @@
 package utils
 
 import (
+	"bytes"
 	"encoding/json"
+	"os"
+	"path"
 	"strings"
 	"testing"
 
 	"github.com/antchfx/xmlquery"
-	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestNodeToJSON(t *testing.T) {
+func TestXmlToJSON(t *testing.T) {
 	tests := []struct {
-		name     string
-		input    string
-		depth    int
-		expected string
+		unformattedFile string
+		expectedFile    string
+		depth           int
 	}{
-		{
-			name:     "Simple XML",
-			input:    "<root><child>value</child></root>",
-			depth:    -1,
-			expected: `{"root":{"child":"value"}}`,
-		},
-		{
-			name:     "XML with attributes",
-			input:    "<root attr=\"value\"><child>text</child></root>",
-			depth:    -1,
-			expected: `{"root":{"@attr":"value","child":"text"}}`,
-		},
-		{
-			name:     "XML with mixed content",
-			input:    "<root>\n  text  <child>value</child>\n  more text\n</root>",
-			depth:    -1,
-			expected: `{"root":{"#text":"text\nmore text","child":"value"}}`,
-		},
-		{
-			name:     "Depth limited XML",
-			input:    "<root><child1><grandchild>value</grandchild></child1><child2>text</child2></root>",
-			depth:    2,
-			expected: `{"root":{"child1":{"grandchild":"value"},"child2":"text"}}`,
-		},
-		{
-			name:     "Depth 1 XML",
-			input:    "<root><child1><grandchild>value</grandchild></child1><child2>text</child2></root>",
-			depth:    1,
-			expected: `{"root":{"child1":"value","child2":"text"}}`,
-		},
-		{
-			name:     "Depth 0 XML",
-			input:    "<root><child1><grandchild>value</grandchild></child1><child2>text</child2></root>",
-			depth:    0,
-			expected: `{"root":"value\ntext"}`,
-		},
-		{
-			name: "mixed text and xml",
-			input: `Thank you
-<thinking>
-1. woop
-</thinking>
-
-Bye`,
-			expected: `{"#text":"Thank you\nBye","thinking":"1. woop"}`,
-		},
+		{"unformatted.xml", "formatted.json", -1},
+		{"unformatted2.xml", "formatted2.json", -1},
+		{"unformatted3.xml", "formatted3.json", -1},
+		{"unformatted4.xml", "formatted4.json", 1},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			doc, err := xmlquery.Parse(strings.NewReader(tt.input))
-			if err != nil {
-				t.Fatalf("Failed to parse XML: %v", err)
-			}
+	for _, testCase := range tests {
+		inputFileName := path.Join("..", "..", "test", "data", "xml2json", testCase.unformattedFile)
+		unformattedXmlReader := getFileReader(inputFileName)
 
-			result := NodeToJSON(doc, tt.depth)
-			resultJSON, err := json.Marshal(result)
-			if err != nil {
-				t.Fatalf("Failed to marshal result to JSON: %v", err)
-			}
+		outputFileName := path.Join("..", "..", "test", "data", "xml2json", testCase.expectedFile)
+		data, jsonReadErr := os.ReadFile(outputFileName)
+		assert.Nil(t, jsonReadErr)
+		expectedJson := string(data)
 
-			var resultMap, expectedMap map[string]interface{}
-			err = json.Unmarshal(resultJSON, &resultMap)
-			if err != nil {
-				t.Fatalf("Failed to unmarshal result JSON: %v", err)
-			}
-			err = json.Unmarshal([]byte(tt.expected), &expectedMap)
-			if err != nil {
-				t.Fatalf("Failed to unmarshal expected JSON: %v", err)
-			}
+		node, parseErr := xmlquery.Parse(unformattedXmlReader)
+		assert.Nil(t, parseErr)
+		result := NodeToJSON(node, testCase.depth)
+		jsonData, jsonMarshalErr := json.Marshal(result)
+		assert.Nil(t, jsonMarshalErr)
 
-			t.Log(string(resultJSON))
-			if diff := cmp.Diff(expectedMap, resultMap); diff != "" {
-				t.Errorf("NodeToJSON mismatch (-want +got):\n%s", diff)
-			}
-		})
+		output := new(strings.Builder)
+		formatErr := FormatJson(bytes.NewReader(jsonData), output, "  ", ColorsDisabled)
+		assert.Nil(t, formatErr)
+		assert.Equal(t, expectedJson, output.String())
 	}
 }
