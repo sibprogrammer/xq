@@ -73,7 +73,10 @@ Extract part of HTML with tags (not only text content) using CSS selector:
 cat test/data/html/unformatted.html | xq -n -q "head"
 ```
 
-Output the result as JSON:
+Output the result as JSON (coming soon):
+
+> [!NOTE]
+> This feature is being worked on and will release in v1.3.0
 
 ```
 cat test/data/xml/unformatted.xml | xq -j
