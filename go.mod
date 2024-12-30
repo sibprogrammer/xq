@@ -3,7 +3,7 @@ module github.com/sibprogrammer/xq
 go 1.23
 
 require (
-	github.com/PuerkitoBio/goquery v1.10.0
+	github.com/PuerkitoBio/goquery v1.10.1
 	github.com/antchfx/xmlquery v1.4.3
 	github.com/antchfx/xpath v1.3.3
 	github.com/fatih/color v1.18.0
@@ -15,7 +15,7 @@ require (
 )
 
 require (
-	github.com/andybalholm/cascadia v1.3.2 // indirect
+	github.com/andybalholm/cascadia v1.3.3 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
