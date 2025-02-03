@@ -8,7 +8,7 @@ require (
 	github.com/antchfx/xpath v1.3.3
 	github.com/fatih/color v1.18.0
 	github.com/spf13/cobra v1.8.1
-	github.com/spf13/pflag v1.0.5
+	github.com/spf13/pflag v1.0.6
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/net v0.34.0
 	golang.org/x/text v0.21.0
