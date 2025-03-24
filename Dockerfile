@@ -1,4 +1,4 @@
-FROM golang:1.23 as builder
+FROM golang:1.24 AS builder
 
 ARG CGO_ENABLED=0
 
