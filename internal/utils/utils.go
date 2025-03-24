@@ -111,7 +111,7 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 			}
 			var attrs []string
 			for _, attr := range typedToken.Attr {
-				if attr.Name.Space == "xmlns" {
+				if attr.Name.Space == "xmlns" && nsAliases[attr.Value] == "" {
 					nsAliases[attr.Value] = attr.Name.Local
 				}
 				if attr.Name.Local == "xmlns" {
