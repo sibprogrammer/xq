@@ -68,6 +68,11 @@ Uses HTML formatter instead of XML.
 .RS 4
 Returns the node content instead of text.
 .RE
+.PP
+\fB--overwrite\fR
+.RS 4
+Instead of printing the formatted file, replace the original with the formatted version.
+.RE
 .SH EXAMPLES
 .PP
 Format an XML file and highlight the syntax:

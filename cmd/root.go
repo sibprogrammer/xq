@@ -30,7 +30,9 @@ func NewRootCmd() *cobra.Command {
 			var err error
 			var reader io.Reader
 			var indent string
+			var path string
 
+			overwrite, _ := cmd.Flags().GetBool("overwrite")
 			if indent, err = getIndent(cmd.Flags()); err != nil {
 				return err
 			}
@@ -42,17 +44,27 @@ func NewRootCmd() *cobra.Command {
 					return nil
 				}
 
+				if overwrite {
+					return errors.New("--overwrite was used but no filenames were specified")
+				}
+
 				reader = os.Stdin
 			} else {
 				var err error
-				if reader, err = os.Open(args[len(args)-1]); err != nil {
+				path = args[len(args)-1]
+				if reader, err = os.Open(path); err != nil {
 					return err
 				}
 			}
 
 			xPathQuery, singleNode := getXpathQuery(cmd.Flags())
 			withTags, _ := cmd.Flags().GetBool("node")
-			colors := getColorMode(cmd.Flags())
+			var colors int
+			if overwrite {
+				colors = utils.ColorsDisabled
+			} else {
+				colors = getColorMode(cmd.Flags())
+			}
 
 			options := utils.QueryOptions{
 				WithTags: withTags,
@@ -101,8 +113,18 @@ func NewRootCmd() *cobra.Command {
 				errChan <- err
 			}()
 
-			if err := utils.PagerPrint(pr, cmd.OutOrStdout()); err != nil {
-				return err
+			if overwrite {
+				var allData []byte
+				if allData, err = io.ReadAll(pr); err != nil {
+					return err
+				}
+				if err = os.WriteFile(path, allData, 0666); err != nil {
+					return err
+				}
+			} else {
+				if err = utils.PagerPrint(pr, cmd.OutOrStdout()); err != nil {
+					return err
+				}
 			}
 
 			return <-errChan
@@ -140,6 +162,7 @@ func InitFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().BoolP("json", "j", false, "Output the result as JSON")
 	cmd.PersistentFlags().Bool("compact", false, "Compact JSON output (no indentation)")
 	cmd.PersistentFlags().IntP("depth", "d", -1, "Maximum nesting depth for JSON output (-1 for unlimited)")
+	cmd.PersistentFlags().Bool("overwrite", false, "Instead of printing the formatted file, replace the original with the formatted version")
 }
 
 func Execute() {
@@ -209,6 +232,7 @@ func detectFormat(flags *pflag.FlagSet, origReader io.Reader) (utils.ContentType
 	buf := make([]byte, 10)
 	length, err := origReader.Read(buf)
 	if err != nil {
+		print(err.Error())
 		return utils.ContentText, origReader
 	}
 
