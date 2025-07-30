@@ -3,7 +3,7 @@
 .SH NAME
 xq - command-line XML and HTML beautifier and content extractor
 .SH SYNOPSIS
-xq [\fIoptions...\fR] [\fIfile\fR]
+xq [\fIoptions...\fR] [\fIfiles...\fR]
 .SH DESCRIPTION
 Formats the provided \fIfile\fR and outputs it in the colorful mode.
 The file can be provided as an argument or via stdin.
