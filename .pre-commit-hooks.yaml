@@ -1,0 +1,5 @@
+- id: xq
+  name: xq
+  entry: xq --overwrite
+  language: golang
+  types: [ "xml" ]
