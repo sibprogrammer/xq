@@ -3,7 +3,7 @@
 .SH NAME
 xq - command-line XML and HTML beautifier and content extractor
 .SH SYNOPSIS
-xq [\fIoptions...\fR] [\fIfile\fR]
+xq [\fIoptions...\fR] [\fIfiles...\fR]
 .SH DESCRIPTION
 Formats the provided \fIfile\fR and outputs it in the colorful mode.
 The file can be provided as an argument or via stdin.
@@ -67,6 +67,11 @@ Uses HTML formatter instead of XML.
 \fB--node\fR | \fB-n\fR
 .RS 4
 Returns the node content instead of text.
+.RE
+.PP
+\fB--overwrite\fR
+.RS 4
+Instead of printing the formatted file, replace the original with the formatted version.
 .RE
 .SH EXAMPLES
 .PP
