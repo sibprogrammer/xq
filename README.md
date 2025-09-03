@@ -105,6 +105,11 @@ For Linux using custom installer:
 curl -sSL https://bit.ly/install-xq | sudo bash
 ```
 
+For Linux using custom installer, changing INSTALL_DIR, without sudo:
+```
+curl -sSL https://bit.ly/install-xq | INSTALL_DIR=$(pwd) bash
+```
+
 For Ubuntu 22.10 or higher via package manager:
 ```
 apt-get install xq
