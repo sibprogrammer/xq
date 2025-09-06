@@ -5,12 +5,12 @@ on:
     paths:
       - '**.go'
       - 'go.mod'
-      - 'build.yml'
+      - 'build.yaml'
   pull_request:
     paths:
       - '**.go'
       - 'go.mod'
-      - 'build.yml'
+      - 'build.yaml'
 
 jobs:
   build:

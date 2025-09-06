@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"sync"
 
 	"github.com/antchfx/xmlquery"
 	"github.com/sibprogrammer/xq/internal/utils"
@@ -28,31 +29,20 @@ func NewRootCmd() *cobra.Command {
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
-			var reader io.Reader
 			var indent string
 
+			overwrite, _ := cmd.Flags().GetBool("overwrite")
 			if indent, err = getIndent(cmd.Flags()); err != nil {
 				return err
 			}
-			if len(args) == 0 {
-				fileInfo, _ := os.Stdin.Stat()
-
-				if (fileInfo.Mode() & os.ModeCharDevice) != 0 {
-					_ = cmd.Help()
-					return nil
-				}
-
-				reader = os.Stdin
-			} else {
-				var err error
-				if reader, err = os.Open(args[len(args)-1]); err != nil {
-					return err
-				}
-			}
-
 			xPathQuery, singleNode := getXpathQuery(cmd.Flags())
 			withTags, _ := cmd.Flags().GetBool("node")
-			colors := getColorMode(cmd.Flags())
+			var colors int
+			if overwrite {
+				colors = utils.ColorsDisabled
+			} else {
+				colors = getColorMode(cmd.Flags())
+			}
 
 			options := utils.QueryOptions{
 				WithTags: withTags,
@@ -67,45 +57,133 @@ func NewRootCmd() *cobra.Command {
 			}
 			jsonOutputMode, _ := cmd.Flags().GetBool("json")
 
-			pr, pw := io.Pipe()
-			errChan := make(chan error, 1)
+			var pagerPR *io.PipeReader
+			var pagerPW *io.PipeWriter
+			if !overwrite {
+				pagerPR, pagerPW = io.Pipe()
+			}
 
-			go func() {
-				defer close(errChan)
-				defer pw.Close()
+			var totalFiles int
+			if len(args) == 0 {
+				totalFiles = 1
+			} else {
+				totalFiles = len(args)
+			}
+			// The “totalFiles * 2” part comes from the fact that there’s two goroutines
+			// inside the for loop and the fact that those two goroutines send a maximum
+			// of one value to errChan. The “+ 1” part comes from the fact that there’s
+			// one goroutine outside of the for loop and the fact that that goroutine
+			// sends a maximum of one value to errChan.
+			errChan := make(chan error, totalFiles * 2 + 1)
+			var wg sync.WaitGroup
+			for i := 0; i < totalFiles; i++ {
+				var path string
+				var reader io.Reader
+				if len(args) == 0 {
+					fileInfo, _ := os.Stdin.Stat()
 
-				var err error
-				if xPathQuery != "" {
-					err = utils.XPathQuery(reader, pw, xPathQuery, singleNode, options)
-				} else if cssQuery != "" {
-					err = utils.CSSQuery(reader, pw, cssQuery, cssAttr, options)
+					if (fileInfo.Mode() & os.ModeCharDevice) != 0 {
+						_ = cmd.Help()
+						return nil
+					}
+
+					if overwrite {
+						return errors.New("--overwrite was used but no filenames were specified")
+					}
+
+					reader = os.Stdin
 				} else {
-					var contentType utils.ContentType
-					contentType, reader = detectFormat(cmd.Flags(), reader)
-					if jsonOutputMode {
-						err = processAsJSON(cmd.Flags(), reader, pw, contentType)
-					} else {
-						switch contentType {
-						case utils.ContentHtml:
-							err = utils.FormatHtml(reader, pw, indent, colors)
-						case utils.ContentXml:
-							err = utils.FormatXml(reader, pw, indent, colors)
-						case utils.ContentJson:
-							err = utils.FormatJson(reader, pw, indent, colors)
-						default:
-							err = fmt.Errorf("unknown content type: %v", contentType)
-						}
+					path = args[i]
+					if reader, err = os.Open(path); err != nil {
+						return err
 					}
 				}
 
-				errChan <- err
-			}()
+				formattedPR, formattedPW := io.Pipe()
 
-			if err := utils.PagerPrint(pr, cmd.OutOrStdout()); err != nil {
-				return err
+				wg.Add(1)
+				go func(reader io.Reader, formattedPW *io.PipeWriter) {
+					defer wg.Done()
+					defer formattedPW.Close()
+
+					var err error
+					if xPathQuery != "" {
+						err = utils.XPathQuery(reader, formattedPW, xPathQuery, singleNode, options)
+					} else if cssQuery != "" {
+						err = utils.CSSQuery(reader, formattedPW, cssQuery, cssAttr, options)
+					} else {
+						var contentType utils.ContentType
+						contentType, reader = detectFormat(cmd.Flags(), reader)
+						if jsonOutputMode {
+							err = processAsJSON(cmd.Flags(), reader, formattedPW, contentType)
+						} else {
+							switch contentType {
+							case utils.ContentHtml:
+								err = utils.FormatHtml(reader, formattedPW, indent, colors)
+							case utils.ContentXml:
+								err = utils.FormatXml(reader, formattedPW, indent, colors)
+							case utils.ContentJson:
+								err = utils.FormatJson(reader, formattedPW, indent, colors)
+							default:
+								err = fmt.Errorf("unknown content type: %v", contentType)
+							}
+						}
+					}
+
+					errChan <- err
+				}(reader, formattedPW)
+
+				wg.Add(1)
+				go func(formattedPR *io.PipeReader, path string) {
+					defer wg.Done()
+					defer formattedPR.Close()
+
+					var err error
+					var allData []byte
+					if allData, err = io.ReadAll(formattedPR); err != nil {
+						errChan <- err
+						return
+					}
+					if overwrite {
+						if err = os.WriteFile(path, allData, 0666); err != nil {
+							errChan <- err
+							return
+						}
+					} else {
+						if _, err = pagerPW.Write(allData); err != nil {
+							errChan <- err
+							return
+						}
+					}
+				}(formattedPR, path)
 			}
 
-			return <-errChan
+			go func() {
+				wg.Wait()
+				if !overwrite {
+					if err := pagerPW.Close(); err != nil {
+						errChan <- err
+					}
+				}
+				close(errChan)
+			}()
+
+			if !overwrite {
+				if err = utils.PagerPrint(pagerPR, cmd.OutOrStdout()); err != nil {
+					return err
+				}
+				if err = pagerPR.Close(); err != nil {
+					return err
+				}
+			}
+
+			for err = range errChan {
+				if err != nil {
+					return err
+				}
+			}
+
+			return nil
 		},
 	}
 }
@@ -140,6 +218,7 @@ func InitFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().BoolP("json", "j", false, "Output the result as JSON")
 	cmd.PersistentFlags().Bool("compact", false, "Compact JSON output (no indentation)")
 	cmd.PersistentFlags().IntP("depth", "d", -1, "Maximum nesting depth for JSON output (-1 for unlimited)")
+	cmd.PersistentFlags().Bool("overwrite", false, "Instead of printing the formatted file, replace the original with the formatted version")
 }
 
 func Execute() {
@@ -209,6 +288,7 @@ func detectFormat(flags *pflag.FlagSet, origReader io.Reader) (utils.ContentType
 	buf := make([]byte, 10)
 	length, err := origReader.Read(buf)
 	if err != nil {
+		print(err.Error())
 		return utils.ContentText, origReader
 	}
 
