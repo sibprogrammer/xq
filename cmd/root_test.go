@@ -26,6 +26,10 @@ func execute(cmd *cobra.Command, args ...string) (string, error) {
 
 	err := cmd.Execute()
 
+	cmd.Flags().VisitAll(func(f *pflag.Flag) {
+		_ = f.Value.Set(f.DefValue)
+	})
+
 	return strings.TrimSpace(buf.String()), err
 }
 
@@ -36,12 +40,17 @@ func TestRootCmd(t *testing.T) {
 	var output string
 	var err error
 	xmlFilePath := path.Join("..", "test", "data", "xml", "unformatted.xml")
+	formattedXmlFilePath := path.Join("..", "test", "data", "xml", "formatted.xml")
 	htmlFilePath := path.Join("..", "test", "data", "html", "unformatted.html")
 	jsonFilePath := path.Join("..", "test", "data", "json", "unformatted.json")
 
 	output, err = execute(command)
 	assert.Nil(t, err)
 	assert.Contains(t, output, "Usage:")
+
+	output, err = execute(command, "--in-place", formattedXmlFilePath)
+	assert.Nil(t, err)
+	assert.Equal(t, output, "")
 
 	output, err = execute(command, xmlFilePath)
 	assert.Nil(t, err)

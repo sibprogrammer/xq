@@ -30,6 +30,9 @@ func NewRootCmd() *cobra.Command {
 			var err error
 			var reader io.Reader
 			var indent string
+			var path string
+
+			inPlace, _ := cmd.Flags().GetBool("in-place")
 
 			if indent, err = getIndent(cmd.Flags()); err != nil {
 				return err
@@ -44,10 +47,15 @@ func NewRootCmd() *cobra.Command {
 
 				reader = os.Stdin
 			} else {
+				path = args[len(args)-1]
 				var err error
-				if reader, err = os.Open(args[len(args)-1]); err != nil {
+				if reader, err = os.Open(path); err != nil {
 					return err
 				}
+			}
+
+			if path == "" && inPlace {
+				return errors.New("in-place formatting requires a file path")
 			}
 
 			xPathQuery, singleNode := getXpathQuery(cmd.Flags())
@@ -101,8 +109,18 @@ func NewRootCmd() *cobra.Command {
 				errChan <- err
 			}()
 
-			if err := utils.PagerPrint(pr, cmd.OutOrStdout()); err != nil {
-				return err
+			if inPlace {
+				var content []byte
+				if content, err = io.ReadAll(pr); err != nil {
+					return err
+				}
+				if err = os.WriteFile(path, content, 0600); err != nil {
+					return err
+				}
+			} else {
+				if err := utils.PagerPrint(pr, cmd.OutOrStdout()); err != nil {
+					return err
+				}
 			}
 
 			return <-errChan
@@ -140,6 +158,7 @@ func InitFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().BoolP("json", "j", false, "Output the result as JSON")
 	cmd.PersistentFlags().Bool("compact", false, "Compact JSON output (no indentation)")
 	cmd.PersistentFlags().IntP("depth", "d", -1, "Maximum nesting depth for JSON output (-1 for unlimited)")
+	cmd.PersistentFlags().BoolP("in-place", "i", false, "Format file in place")
 }
 
 func Execute() {
@@ -185,6 +204,11 @@ func getXpathQuery(flags *pflag.FlagSet) (query string, single bool) {
 }
 
 func getColorMode(flags *pflag.FlagSet) int {
+	inPlace, _ := flags.GetBool("in-place")
+	if inPlace {
+		return utils.ColorsDisabled
+	}
+
 	colors := utils.ColorsDefault
 
 	disableColors, _ := flags.GetBool("no-color")
