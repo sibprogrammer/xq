@@ -64,6 +64,11 @@ Extracts an attribute value instead of node content for provided CSS query.
 Uses HTML formatter instead of XML.
 .RE
 .PP
+\fB--json\fR | \fB-j\fR
+.RS 4
+Output the result as JSON.
+.RE
+.PP
 \fB--node\fR | \fB-n\fR
 .RS 4
 Returns the node content instead of text.
