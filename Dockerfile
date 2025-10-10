@@ -9,7 +9,7 @@ RUN go mod download
 COPY . .
 RUN go build
 
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 COPY --from=builder /opt/xq /usr/local/bin/xq
 
