@@ -4,7 +4,7 @@ go 1.25
 
 require (
 	github.com/PuerkitoBio/goquery v1.10.3
-	github.com/antchfx/xmlquery v1.4.4
+	github.com/antchfx/xmlquery v1.5.0
 	github.com/antchfx/xpath v1.3.5
 	github.com/fatih/color v1.18.0
 	github.com/spf13/cobra v1.10.1
