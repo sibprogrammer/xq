@@ -338,6 +338,9 @@ func FormatHtml(reader io.Reader, writer io.Writer, indent string, colors int) e
 		case html.TextToken:
 			str := normalizeSpaces(string(tokenizer.Text()), indent, level)
 			hasContent = str != ""
+			if hasContent {
+				str = escapeTextContent(str)
+			}
 			_, _ = fmt.Fprint(writer, str)
 		case html.StartTagToken, html.SelfClosingTagToken:
 			if level > 0 {
@@ -583,6 +586,15 @@ func escapeText(input string) (string, error) {
 	result = strings.Replace(result, "&#39;", "&apos;", -1)
 
 	return result, nil
+}
+
+func escapeTextContent(input string) string {
+	// Only escape the minimal set of characters needed for text content
+	// to avoid XML parsing errors: & < >
+	result := strings.ReplaceAll(input, "&", "&amp;")
+	result = strings.ReplaceAll(result, "<", "&lt;")
+	result = strings.ReplaceAll(result, ">", "&gt;")
+	return result
 }
 
 func normalizeSpaces(input string, indent string, level int) string {
