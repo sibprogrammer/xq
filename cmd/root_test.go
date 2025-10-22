@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/antchfx/xmlquery"
 	"github.com/sibprogrammer/xq/internal/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -100,6 +101,57 @@ func TestRootCmd(t *testing.T) {
 
 	_, err = execute(command, "--indent", "incorrect", xmlFilePath)
 	assert.ErrorContains(t, err, "invalid argument")
+}
+
+func TestEscapedTextNodes(t *testing.T) {
+	// Test case 1: ampersand entity - reproduce issue #160
+	// xq outputs bare & which fails when parsed as XML (used by -j flag)
+	t.Run("ampersand entity output is valid XML", func(t *testing.T) {
+		input := "<html>1 &amp; 2</html>"
+
+		// First pass: format the HTML
+		reader1 := strings.NewReader(input)
+		var output1 bytes.Buffer
+		err := utils.FormatHtml(reader1, &output1, "", utils.ColorsDisabled)
+		assert.Nil(t, err)
+
+		result1 := strings.TrimSpace(output1.String())
+		t.Logf("First pass output: %q", result1)
+
+		// Second pass: try to parse as XML (this is what `xq -j` does)
+		reader2 := strings.NewReader(result1)
+		_, err = xmlquery.Parse(reader2)
+		assert.Nil(t, err, "xq output should be parseable as XML (for -j flag)")
+	})
+
+	// Test case 2: less-than and greater-than entities - reproduce issue #160
+	// xq outputs bare < and > which are parsed as tags
+	t.Run("less-than and greater-than entities output is valid XML", func(t *testing.T) {
+		input := "<html>is &lt;bold&gt; a valid tag?</html>"
+
+		// First pass: format the HTML
+		reader1 := strings.NewReader(input)
+		var output1 bytes.Buffer
+		err := utils.FormatHtml(reader1, &output1, "", utils.ColorsDisabled)
+		assert.Nil(t, err)
+
+		result1 := strings.TrimSpace(output1.String())
+		t.Logf("First pass output: %q", result1)
+
+		// Second pass: try to parse as XML (this is what `xq -j` does)
+		reader2 := strings.NewReader(result1)
+		doc, err := xmlquery.Parse(reader2)
+		assert.Nil(t, err, "xq output should be parseable as XML (for -j flag)")
+
+		// Verify the text content is preserved correctly
+		if doc != nil {
+			textNode := xmlquery.FindOne(doc, "//html")
+			if textNode != nil {
+				assert.Equal(t, "is <bold> a valid tag?", textNode.InnerText(),
+					"Text content should preserve the literal < and > characters")
+			}
+		}
+	})
 }
 
 func TestProcessAsJSON(t *testing.T) {
