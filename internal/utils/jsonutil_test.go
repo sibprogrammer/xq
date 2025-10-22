@@ -45,3 +45,42 @@ func TestXmlToJSON(t *testing.T) {
 		assert.Equal(t, expectedJson, output.String())
 	}
 }
+
+func TestExhaustiveNodeTypeHandling(t *testing.T) {
+	// Test that all xmlquery node types are handled without panicking
+	// This verifies our exhaustive switch statements work correctly
+
+	xmlInput := `<?xml version="1.0"?>
+<!DOCTYPE root>
+<!-- This is a comment -->
+<root>
+	<element>text content</element>
+	<cdata><![CDATA[raw & unescaped < > content]]></cdata>
+	<!-- another comment inside -->
+	<?processing-instruction data?>
+	<mixed>text<child>more</child>tail</mixed>
+</root>`
+
+	node, err := xmlquery.Parse(strings.NewReader(xmlInput))
+	assert.NoError(t, err)
+
+	// Should not panic - this exercises all the node types
+	result := NodeToJSON(node, -1)
+	assert.NotNil(t, result)
+
+	// Verify the result is a map
+	resultMap, ok := result.(map[string]interface{})
+	assert.True(t, ok)
+
+	// Verify root element exists
+	root, ok := resultMap["root"]
+	assert.True(t, ok)
+
+	rootMap, ok := root.(map[string]interface{})
+	assert.True(t, ok)
+
+	// Verify CDATA is preserved as text
+	cdataElem, ok := rootMap["cdata"]
+	assert.True(t, ok)
+	assert.Contains(t, cdataElem, "raw & unescaped")
+}
