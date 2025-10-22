@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/antchfx/xmlquery"
 	"github.com/sibprogrammer/xq/internal/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -100,6 +101,17 @@ func TestRootCmd(t *testing.T) {
 
 	_, err = execute(command, "--indent", "incorrect", xmlFilePath)
 	assert.ErrorContains(t, err, "invalid argument")
+}
+
+func TestCDATASupport(t *testing.T) {
+	input := "<root><![CDATA[1 & 2]]></root>"
+	doc, err := xmlquery.Parse(strings.NewReader(input))
+	assert.Nil(t, err)
+
+	result := utils.NodeToJSON(doc, 10)
+	expected := map[string]interface{}{"root": "1 & 2"}
+
+	assert.Equal(t, expected, result)
 }
 
 func TestProcessAsJSON(t *testing.T) {

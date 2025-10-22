@@ -21,7 +21,7 @@ func NodeToJSON(node *xmlquery.Node, depth int) interface{} {
 		var textParts []string
 
 		// Process the next sibling of the document node first (if any)
-		if node.NextSibling != nil && node.NextSibling.Type == xmlquery.TextNode {
+		if node.NextSibling != nil && (node.NextSibling.Type == xmlquery.TextNode || node.NextSibling.Type == xmlquery.CharDataNode) {
 			text := strings.TrimSpace(node.NextSibling.Data)
 			if text != "" {
 				textParts = append(textParts, text)
@@ -34,7 +34,7 @@ func NodeToJSON(node *xmlquery.Node, depth int) interface{} {
 			case xmlquery.ElementNode:
 				childResult := nodeToJSONInternal(child, depth)
 				result[child.Data] = childResult
-			case xmlquery.TextNode:
+			case xmlquery.TextNode, xmlquery.CharDataNode: // Text and CDATA
 				text := strings.TrimSpace(child.Data)
 				if text != "" {
 					textParts = append(textParts, text)
@@ -50,7 +50,7 @@ func NodeToJSON(node *xmlquery.Node, depth int) interface{} {
 	case xmlquery.ElementNode:
 		return nodeToJSONInternal(node, depth)
 
-	case xmlquery.TextNode:
+	case xmlquery.TextNode, xmlquery.CharDataNode: // Text and CDATA
 		return strings.TrimSpace(node.Data)
 
 	default:
@@ -71,7 +71,7 @@ func nodeToJSONInternal(node *xmlquery.Node, depth int) interface{} {
 	var textParts []string
 	for child := node.FirstChild; child != nil; child = child.NextSibling {
 		switch child.Type {
-		case xmlquery.TextNode:
+		case xmlquery.TextNode, xmlquery.CharDataNode: // Text and CDATA
 			text := strings.TrimSpace(child.Data)
 			if text != "" {
 				textParts = append(textParts, text)
@@ -96,7 +96,7 @@ func getTextContent(node *xmlquery.Node) string {
 	var parts []string
 	for child := node.FirstChild; child != nil; child = child.NextSibling {
 		switch child.Type {
-		case xmlquery.TextNode:
+		case xmlquery.TextNode, xmlquery.CharDataNode: // Text and CDATA
 			text := strings.TrimSpace(child.Data)
 			if text != "" {
 				parts = append(parts, text)
