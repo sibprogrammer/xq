@@ -61,6 +61,8 @@ func LoadConfig(fileName string) error {
 			config.NoColor, _ = strconv.ParseBool(value)
 		case "color":
 			config.Color, _ = strconv.ParseBool(value)
+		default:
+			// Ignore unknown config options for forward compatibility
 		}
 	}
 
