@@ -84,9 +84,13 @@ func nodeToJSONInternal(node *xmlquery.Node, depth int) interface{} {
 
 	if len(textParts) > 0 {
 		if len(result) == 0 {
+			// Element contains only text
 			return strings.Join(textParts, "\n")
 		}
 		result["#text"] = strings.Join(textParts, "\n")
+	} else if len(result) == 0 {
+		// Self-closing tags have null content
+		return nil
 	}
 
 	return result
