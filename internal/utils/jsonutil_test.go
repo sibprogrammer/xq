@@ -84,3 +84,79 @@ func TestExhaustiveNodeTypeHandling(t *testing.T) {
 	assert.True(t, ok)
 	assert.Contains(t, cdataElem, "raw & unescaped")
 }
+
+func TestUnknownNodeTypePanics(t *testing.T) {
+	// Test that unknown node types trigger defensive panics
+	// This ensures we catch issues if xmlquery adds new node types
+
+	t.Run("unknown NodeType passed to NodeToJSON panics", func(t *testing.T) {
+		// Create a node with an invalid type
+		invalidNode := &xmlquery.Node{
+			Type: xmlquery.NodeType(255), // Invalid type
+			Data: "test",
+		}
+
+		assert.Panics(t, func() {
+			NodeToJSON(invalidNode, -1)
+		}, "NodeToJSON should panic on unknown node type")
+	})
+
+	t.Run("unknown NodeType as child of DocumentNode panics", func(t *testing.T) {
+		// Create a document with an invalid child
+		doc := &xmlquery.Node{
+			Type: xmlquery.DocumentNode,
+		}
+		invalidChild := &xmlquery.Node{
+			Type: xmlquery.NodeType(255), // Invalid type
+			Data: "test",
+		}
+		doc.FirstChild = invalidChild
+		invalidChild.Parent = doc
+
+		assert.Panics(t, func() {
+			NodeToJSON(doc, -1)
+		}, "NodeToJSON should panic on unknown child type under DocumentNode")
+	})
+
+	t.Run("unknown NodeType as child of ElementNode panics", func(t *testing.T) {
+		// Create a document with an element that has an invalid child
+		doc := &xmlquery.Node{
+			Type: xmlquery.DocumentNode,
+		}
+		elem := &xmlquery.Node{
+			Type:   xmlquery.ElementNode,
+			Data:   "root",
+			Parent: doc,
+		}
+		invalidChild := &xmlquery.Node{
+			Type:   xmlquery.NodeType(255), // Invalid type
+			Data:   "test",
+			Parent: elem,
+		}
+		doc.FirstChild = elem
+		elem.FirstChild = invalidChild
+
+		assert.Panics(t, func() {
+			NodeToJSON(doc, -1)
+		}, "NodeToJSON should panic on unknown child type under ElementNode")
+	})
+
+	t.Run("unknown NodeType in getTextContent panics", func(t *testing.T) {
+		// getTextContent is called when extracting text from elements
+		// Create an element with mixed content including invalid node
+		elem := &xmlquery.Node{
+			Type: xmlquery.ElementNode,
+			Data: "test",
+		}
+		invalidChild := &xmlquery.Node{
+			Type:   xmlquery.NodeType(255), // Invalid type
+			Data:   "test",
+			Parent: elem,
+		}
+		elem.FirstChild = invalidChild
+
+		assert.Panics(t, func() {
+			getTextContent(elem)
+		}, "getTextContent should panic on unknown node type")
+	})
+}
