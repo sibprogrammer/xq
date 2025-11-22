@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -25,10 +25,10 @@ func TestXmlToJSON(t *testing.T) {
 	}
 
 	for _, testCase := range tests {
-		inputFileName := path.Join("..", "..", "test", "data", "xml2json", testCase.unformattedFile)
+		inputFileName := filepath.Join("..", "..", "test", "data", "xml2json", testCase.unformattedFile)
 		unformattedXmlReader := getFileReader(inputFileName)
 
-		outputFileName := path.Join("..", "..", "test", "data", "xml2json", testCase.expectedFile)
+		outputFileName := filepath.Join("..", "..", "test", "data", "xml2json", testCase.expectedFile)
 		data, jsonReadErr := os.ReadFile(outputFileName)
 		assert.Nil(t, jsonReadErr)
 		expectedJson := string(data)

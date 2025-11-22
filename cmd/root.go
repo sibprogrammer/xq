@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/antchfx/xmlquery"
@@ -130,7 +130,7 @@ func NewRootCmd() *cobra.Command {
 
 func InitFlags(cmd *cobra.Command) {
 	homeDir, _ := os.UserHomeDir()
-	configFile := path.Join(homeDir, ".xq")
+	configFile := filepath.Join(homeDir, ".xq")
 	if err := utils.LoadConfig(configFile); err != nil {
 		fmt.Printf("Error while reading the config file: %v\n", err)
 		os.Exit(1)

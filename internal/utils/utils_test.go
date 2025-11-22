@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"io"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -42,9 +42,9 @@ func TestFormatXml(t *testing.T) {
 	}
 
 	for unformattedFile, expectedFile := range files {
-		unformattedXmlReader := getFileReader(path.Join("..", "..", "test", "data", "xml", unformattedFile))
+		unformattedXmlReader := getFileReader(filepath.Join("..", "..", "test", "data", "xml", unformattedFile))
 
-		bytes, readErr := os.ReadFile(path.Join("..", "..", "test", "data", "xml", expectedFile))
+		bytes, readErr := os.ReadFile(filepath.Join("..", "..", "test", "data", "xml", expectedFile))
 		assert.Nil(t, readErr)
 		expectedXml := string(bytes)
 
@@ -67,9 +67,9 @@ func TestFormatHtml(t *testing.T) {
 	}
 
 	for unformattedFile, expectedFile := range files {
-		unformattedHtmlReader := getFileReader(path.Join("..", "..", "test", "data", "html", unformattedFile))
+		unformattedHtmlReader := getFileReader(filepath.Join("..", "..", "test", "data", "html", unformattedFile))
 
-		data, readErr := os.ReadFile(path.Join("..", "..", "test", "data", "html", expectedFile))
+		data, readErr := os.ReadFile(filepath.Join("..", "..", "test", "data", "html", expectedFile))
 		assert.Nil(t, readErr)
 		expectedHtml := string(data)
 
@@ -88,9 +88,9 @@ func TestFormatJson(t *testing.T) {
 	}
 
 	for unformattedFile, expectedFile := range files {
-		unformattedJsonReader := getFileReader(path.Join("..", "..", "test", "data", "json", unformattedFile))
+		unformattedJsonReader := getFileReader(filepath.Join("..", "..", "test", "data", "json", unformattedFile))
 
-		data, readErr := os.ReadFile(path.Join("..", "..", "test", "data", "json", expectedFile))
+		data, readErr := os.ReadFile(filepath.Join("..", "..", "test", "data", "json", expectedFile))
 		assert.Nil(t, readErr)
 		expectedJson := string(data)
 
@@ -118,7 +118,7 @@ func TestXPathQuery(t *testing.T) {
 	}
 
 	for _, testCase := range tests {
-		fileReader := getFileReader(path.Join("..", "..", "test", "data", "xml", testCase.input))
+		fileReader := getFileReader(filepath.Join("..", "..", "test", "data", "xml", testCase.input))
 		output := new(strings.Builder)
 		options := QueryOptions{WithTags: testCase.node, Indent: "  "}
 		err := XPathQuery(fileReader, output, testCase.query, testCase.single, options)
@@ -144,7 +144,7 @@ func TestCSSQuery(t *testing.T) {
 	}
 
 	for _, testCase := range tests {
-		fileReader := getFileReader(path.Join("..", "..", "test", "data", "html", testCase.input))
+		fileReader := getFileReader(filepath.Join("..", "..", "test", "data", "html", testCase.input))
 		output := new(strings.Builder)
 		options := QueryOptions{WithTags: testCase.node, Indent: "  "}
 		err := CSSQuery(fileReader, output, testCase.query, testCase.attr, options)
@@ -172,7 +172,7 @@ func TestIsJSON(t *testing.T) {
 
 func TestPagerPrint(t *testing.T) {
 	var output bytes.Buffer
-	fileReader := getFileReader(path.Join("..", "..", "test", "data", "html", "formatted.html"))
+	fileReader := getFileReader(filepath.Join("..", "..", "test", "data", "html", "formatted.html"))
 	err := PagerPrint(fileReader, &output)
 	assert.Nil(t, err)
 	assert.Contains(t, output.String(), "<html>")
