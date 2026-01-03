@@ -76,13 +76,12 @@ func NewRootCmd() *cobra.Command {
 			jsonOutputMode, _ := cmd.Flags().GetBool("json")
 
 			pr, pw := io.Pipe()
-			errChan := make(chan error, 1)
 
 			go func() {
-				defer close(errChan)
-				defer pw.Close()
+				defer func() {
+					_ = pw.Close()
+				}()
 
-				var err error
 				if xPathQuery != "" {
 					err = utils.XPathQuery(reader, pw, xPathQuery, singleNode, options)
 				} else if cssQuery != "" {
@@ -106,7 +105,10 @@ func NewRootCmd() *cobra.Command {
 					}
 				}
 
-				errChan <- err
+				if err != nil {
+					fmt.Println("Error:", err)
+					os.Exit(1)
+				}
 			}()
 
 			if inPlace {
@@ -117,13 +119,11 @@ func NewRootCmd() *cobra.Command {
 				if err = os.WriteFile(path, content, 0600); err != nil {
 					return err
 				}
-			} else {
-				if err := utils.PagerPrint(pr, cmd.OutOrStdout()); err != nil {
-					return err
-				}
-			}
 
-			return <-errChan
+				return nil
+			} else {
+				return utils.PagerPrint(pr, cmd.OutOrStdout())
+			}
 		},
 	}
 }
