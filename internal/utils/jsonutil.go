@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/antchfx/xmlquery"
@@ -39,6 +40,11 @@ func NodeToJSON(node *xmlquery.Node, depth int) interface{} {
 				if text != "" {
 					textParts = append(textParts, text)
 				}
+			case xmlquery.CommentNode, xmlquery.DeclarationNode, xmlquery.ProcessingInstruction, xmlquery.NotationNode:
+				// Skip these in JSON output
+			default:
+				// Should be impossible: all valid child node types handled above
+				panic(fmt.Sprintf("unknown NodeType as child of DocumentNode: %v", child.Type))
 			}
 		}
 
@@ -53,8 +59,13 @@ func NodeToJSON(node *xmlquery.Node, depth int) interface{} {
 	case xmlquery.TextNode, xmlquery.CharDataNode:
 		return strings.TrimSpace(node.Data)
 
-	default:
+	case xmlquery.CommentNode:
+		// Comments passed as root, return empty
 		return nil
+
+	default:
+		// Should be impossible: DocumentNode, ElementNode, TextNode, CharDataNode, CommentNode are the only valid root nodes
+		panic(fmt.Sprintf("unknown NodeType passed to NodeToJSON: %v", node.Type))
 	}
 }
 
@@ -79,6 +90,11 @@ func nodeToJSONInternal(node *xmlquery.Node, depth int) interface{} {
 		case xmlquery.ElementNode:
 			childResult := nodeToJSONInternal(child, depth-1)
 			addToResult(result, child.Data, childResult)
+		case xmlquery.CommentNode, xmlquery.ProcessingInstruction:
+			// Skip these in JSON output
+		default:
+			// Should be impossible: all valid element child types handled above
+			panic(fmt.Sprintf("unknown NodeType as child of ElementNode: %v", child.Type))
 		}
 	}
 
@@ -103,6 +119,11 @@ func getTextContent(node *xmlquery.Node) string {
 			}
 		case xmlquery.ElementNode:
 			parts = append(parts, getTextContent(child))
+		case xmlquery.CommentNode, xmlquery.ProcessingInstruction:
+			// Skip these when extracting text
+		default:
+			// Should be impossible: all valid element child types handled above
+			panic(fmt.Sprintf("unknown NodeType in getTextContent: %v", child.Type))
 		}
 	}
 	return strings.Join(parts, "\n")
