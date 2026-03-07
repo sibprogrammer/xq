@@ -3,8 +3,9 @@ package main
 import (
 	_ "embed"
 	"fmt"
-	"github.com/sibprogrammer/xq/cmd"
 	"strings"
+
+	"github.com/sibprogrammer/xq/cmd"
 )
 
 var (
