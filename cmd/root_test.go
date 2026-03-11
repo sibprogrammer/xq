@@ -109,9 +109,17 @@ func TestCDATASupport(t *testing.T) {
 	assert.Nil(t, err)
 
 	result := utils.NodeToJSON(doc, 10)
-	expected := map[string]interface{}{"root": "1 & 2"}
 
-	assert.Equal(t, expected, result)
+	// Marshal and unmarshal to compare structure
+	jsonData, err := json.Marshal(result)
+	assert.Nil(t, err)
+
+	var resultMap map[string]interface{}
+	err = json.Unmarshal(jsonData, &resultMap)
+	assert.Nil(t, err)
+
+	expected := map[string]interface{}{"root": "1 & 2"}
+	assert.Equal(t, expected, resultMap)
 }
 
 func TestProcessAsJSON(t *testing.T) {
