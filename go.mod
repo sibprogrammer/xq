@@ -4,7 +4,7 @@ go 1.26.1
 
 require (
 	github.com/PuerkitoBio/goquery v1.12.0
-	github.com/antchfx/xmlquery v1.5.0
+	github.com/antchfx/xmlquery v1.5.1
 	github.com/antchfx/xpath v1.3.6
 	github.com/fatih/color v1.18.0
 	github.com/spf13/cobra v1.10.2
