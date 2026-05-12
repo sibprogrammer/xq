@@ -94,10 +94,16 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 			_, _ = fmt.Fprintf(writer, "%s%s", tagColor("<?"), typedToken.Target)
 
 			pi := strings.TrimSpace(string(typedToken.Inst))
-			attrs := strings.Split(pi, " ")
-			for _, attr := range attrs {
-				attrComponents := strings.SplitN(attr, "=", 2)
-				_, _ = fmt.Fprintf(writer, " %s%s", attrComponents[0], attrColor("="+attrComponents[1]))
+			if pi != "" {
+				attrs := strings.Split(pi, " ")
+				for _, attr := range attrs {
+					attrComponents := strings.SplitN(attr, "=", 2)
+					if len(attrComponents) == 2 {
+						_, _ = fmt.Fprintf(writer, " %s%s", attrComponents[0], attrColor("="+attrComponents[1]))
+					} else {
+						_, _ = fmt.Fprintf(writer, " %s", attrComponents[0])
+					}
+				}
 			}
 
 			_, _ = fmt.Fprint(writer, tagColor("?>"), newline)
