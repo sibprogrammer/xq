@@ -211,3 +211,25 @@ Bye.`,
 		})
 	}
 }
+
+func TestIsJSON(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{"{}", true},
+		{"[]", true},
+		{" {}", true},
+		{"\t[", true},
+		{"<root></root>", false},
+		{"<![CDATA[text]]>", false}, // Bug #160: should not match [ in CDATA
+		{"plain text", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			result := utils.IsJSON(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
