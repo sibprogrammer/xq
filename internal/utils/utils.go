@@ -243,6 +243,8 @@ func XPathQuery(reader io.Reader, writer io.Writer, query string, singleNode boo
 		switch typedVal := val.(type) {
 		case float64:
 			_, err = fmt.Fprintf(writer, "%.0f\n", typedVal)
+		case bool:
+			_, err = fmt.Fprintf(writer, "%t\n", typedVal)
 		case string:
 			_, err = fmt.Fprintf(writer, "%s\n", strings.TrimSpace(typedVal))
 		case *xpath.NodeIterator:
