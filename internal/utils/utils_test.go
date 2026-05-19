@@ -128,6 +128,21 @@ func TestXPathQuery(t *testing.T) {
 	}
 }
 
+func TestXPathQueryBoolean(t *testing.T) {
+	tests := map[string]string{
+		"boolean(//root)":    "true",
+		"boolean(//missing)": "false",
+	}
+
+	for query, expected := range tests {
+		output := new(strings.Builder)
+		options := QueryOptions{}
+		err := XPathQuery(strings.NewReader(`<?xml version="1.0"?><root></root>`), output, query, false, options)
+		assert.Nil(t, err)
+		assert.Equal(t, expected, strings.Trim(output.String(), "\n"))
+	}
+}
+
 func TestCSSQuery(t *testing.T) {
 	type test struct {
 		input  string
