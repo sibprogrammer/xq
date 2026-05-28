@@ -6,13 +6,6 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"github.com/PuerkitoBio/goquery"
-	"github.com/antchfx/xmlquery"
-	"github.com/antchfx/xpath"
-	"github.com/fatih/color"
-	"golang.org/x/net/html"
-	"golang.org/x/text/encoding/ianaindex"
-	"golang.org/x/text/transform"
 	"io"
 	"os"
 	"os/exec"
@@ -20,6 +13,14 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/PuerkitoBio/goquery"
+	"github.com/antchfx/xmlquery"
+	"github.com/antchfx/xpath"
+	"github.com/fatih/color"
+	"golang.org/x/net/html"
+	"golang.org/x/text/encoding/ianaindex"
+	"golang.org/x/text/transform"
 )
 
 const (
@@ -346,6 +347,9 @@ func FormatHtml(reader io.Reader, writer io.Writer, indent string, colors int) e
 		case html.TextToken:
 			str := normalizeSpaces(string(tokenizer.Text()), indent, level)
 			hasContent = str != ""
+			if hasContent {
+				str, _ = escapeText(str)
+			}
 			_, _ = fmt.Fprint(writer, str)
 		case html.StartTagToken, html.SelfClosingTagToken:
 			if level > 0 {
@@ -589,6 +593,8 @@ func escapeText(input string) (string, error) {
 	result := buf.String()
 	result = strings.Replace(result, "&#34;", "&quot;", -1)
 	result = strings.Replace(result, "&#39;", "&apos;", -1)
+	result = strings.Replace(result, "&#10;", "\n", -1)
+	result = strings.Replace(result, "&#xA;", "\n", -1)
 
 	return result, nil
 }
