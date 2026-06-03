@@ -184,6 +184,7 @@ func TestIsJSON(t *testing.T) {
 	assert.True(t, IsJSON(`[1, 2, 3]`))
 	assert.True(t, IsJSON(`   {}`))
 	assert.False(t, IsJSON(`<html></html>`))
+	assert.False(t, IsJSON(`<![CDATA[text]]>`))
 }
 
 func TestPagerPrint(t *testing.T) {

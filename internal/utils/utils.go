@@ -531,7 +531,7 @@ func IsHTML(input string) bool {
 
 func IsJSON(input string) bool {
 	input = strings.ToLower(input)
-	matched, _ := regexp.MatchString(`\s*[{\[]`, input)
+	matched, _ := regexp.MatchString(`^\s*[{\[]`, input)
 	return matched
 }
 
