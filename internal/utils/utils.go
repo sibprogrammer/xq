@@ -66,6 +66,11 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 	attrColor := color.New(color.FgGreen).SprintFunc()
 	commentColor := color.New(color.FgHiBlue).SprintFunc()
 
+	write := func(args ...any) error {
+		_, err := fmt.Fprint(writer, args...)
+		return err
+	}
+
 	for {
 		token, err := decoder.Token()
 
@@ -79,7 +84,7 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 
 		switch typedToken := token.(type) {
 		case xml.ProcInst:
-			_, _ = fmt.Fprintf(writer, "%s%s", tagColor("<?"), typedToken.Target)
+			_ = write(tagColor("<?"), typedToken.Target)
 
 			pi := strings.TrimSpace(string(typedToken.Inst))
 			if pi != "" {
@@ -87,21 +92,21 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 				for _, attr := range attrs {
 					attrComponents := strings.SplitN(attr, "=", 2)
 					if len(attrComponents) == 2 {
-						_, _ = fmt.Fprintf(writer, " %s%s", attrComponents[0], attrColor("="+attrComponents[1]))
+						_ = write(" ", attrComponents[0], attrColor("="+attrComponents[1]))
 					} else {
-						_, _ = fmt.Fprintf(writer, " %s", attrComponents[0])
+						_ = write(" ", attrComponents[0])
 					}
 				}
 			}
 
-			_, _ = fmt.Fprint(writer, tagColor("?>"), newline)
+			_ = write(tagColor("?>"), newline)
 		case xml.StartElement:
 			if !startTagClosed {
-				_, _ = fmt.Fprint(writer, tagColor(">"))
+				_ = write(tagColor(">"))
 				startTagClosed = true
 			}
 			if level > 0 {
-				_, _ = fmt.Fprint(writer, newline, strings.Repeat(indent, level))
+				_ = write(newline, strings.Repeat(indent, level))
 			}
 			var attrs []string
 			for _, attr := range typedToken.Attr {
@@ -120,7 +125,7 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 				attrsStr = " " + attrsStr
 			}
 			currentTagName := getTokenFullName(typedToken.Name, nsAliases)
-			_, _ = fmt.Fprint(writer, tagColor("<"+currentTagName)+attrsStr)
+			_ = write(tagColor("<"+currentTagName), attrsStr)
 			lastTagName = currentTagName
 			startTagClosed = false
 			level++
@@ -129,32 +134,32 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 			str := normalizeSpaces(string(typedToken), indent, level)
 			hasContent = str != ""
 			if hasContent && !startTagClosed {
-				_, _ = fmt.Fprint(writer, tagColor(">"))
+				_ = write(tagColor(">"))
 				startTagClosed = true
 			}
 			if hasContent && (strings.Contains(str, "&") || strings.Contains(str, "<")) {
 				str = "<![CDATA[" + str + "]]>"
 			}
-			_, _ = fmt.Fprint(writer, str)
+			_ = write(str)
 		case xml.Comment:
 			if !startTagClosed {
-				_, _ = fmt.Fprint(writer, tagColor(">"))
+				_ = write(tagColor(">"))
 				startTagClosed = true
 			}
 
 			for index, commentLine := range strings.Split(string(typedToken), "\n") {
 				if !hasContent && level > 0 {
-					_, _ = fmt.Fprint(writer, newline, strings.Repeat(indent, level))
+					_ = write(newline, strings.Repeat(indent, level))
 				}
 				if index == 0 {
-					_, _ = fmt.Fprint(writer, commentColor("<!--"))
+					_ = write(commentColor("<!--"))
 				}
-				_, _ = fmt.Fprint(writer, commentColor(commentLine))
+				_ = write(commentColor(commentLine))
 			}
-			_, _ = fmt.Fprint(writer, commentColor("-->"))
+			_ = write(commentColor("-->"))
 
 			if level == 0 {
-				_, _ = fmt.Fprint(writer, newline)
+				_ = write(newline)
 			}
 		case xml.EndElement:
 			if level > 0 {
@@ -164,16 +169,16 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 			if !hasContent {
 				if lastTagName != currentTagName {
 					if !startTagClosed {
-						_, _ = fmt.Fprint(writer, tagColor(">"))
+						_ = write(tagColor(">"))
 						startTagClosed = true
 					}
-					_, _ = fmt.Fprint(writer, newline, strings.Repeat(indent, level), tagColor("</"+currentTagName+">"))
+					_ = write(newline, strings.Repeat(indent, level), tagColor("</"+currentTagName+">"))
 				} else {
-					_, _ = fmt.Fprint(writer, tagColor("/>"))
+					_ = write(tagColor("/>"))
 					startTagClosed = true
 				}
 			} else {
-				_, _ = fmt.Fprint(writer, tagColor("</"+currentTagName+">"))
+				_ = write(tagColor("</"+currentTagName+">"))
 			}
 			hasContent = false
 			lastTagName = currentTagName
@@ -181,15 +186,13 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 				lastTagName = ""
 			}
 		case xml.Directive:
-			_, _ = fmt.Fprint(writer, tagColor("<!"), string(typedToken), tagColor(">"))
-			_, _ = fmt.Fprint(writer, newline, strings.Repeat(indent, level))
+			_ = write(tagColor("<!"), string(typedToken), tagColor(">"))
+			_ = write(newline, strings.Repeat(indent, level))
 		default:
 		}
 	}
 
-	_, _ = fmt.Fprint(writer, "\n")
-
-	return nil
+	return write("\n")
 }
 
 func XPathQuery(reader io.Reader, writer io.Writer, query string, singleNode bool, options QueryOptions) (errRes error) {
@@ -319,6 +322,11 @@ func FormatHtml(reader io.Reader, writer io.Writer, indent string, colors int) e
 		newline = ""
 	}
 
+	write := func(args ...any) error {
+		_, err := fmt.Fprint(writer, args...)
+		return err
+	}
+
 	for {
 		token := tokenizer.Next()
 
@@ -337,10 +345,10 @@ func FormatHtml(reader io.Reader, writer io.Writer, indent string, colors int) e
 			if hasContent {
 				str, _ = escapeText(str)
 			}
-			_, _ = fmt.Fprint(writer, str)
+			_ = write(str)
 		case html.StartTagToken, html.SelfClosingTagToken:
 			if level > 0 {
-				_, _ = fmt.Fprint(writer, newline, strings.Repeat(indent, level))
+				_ = write(newline, strings.Repeat(indent, level))
 			}
 
 			tagName, hasAttr := tokenizer.TagName()
@@ -366,13 +374,13 @@ func FormatHtml(reader io.Reader, writer io.Writer, indent string, colors int) e
 				attrsStr = " " + strings.Join(attrs, " ")
 			}
 
-			_, _ = fmt.Fprint(writer, tagColor("<"+string(tagName))+attrsStr)
+			_ = write(tagColor("<"+string(tagName)), attrsStr)
 
 			if selfClosingTag {
-				_, _ = fmt.Fprint(writer, tagColor("/>"))
+				_ = write(tagColor("/>"))
 			} else {
 				level++
-				_, _ = fmt.Fprint(writer, tagColor(">"))
+				_ = write(tagColor(">"))
 				forceNewLine = false
 			}
 		case html.EndTagToken:
@@ -382,32 +390,30 @@ func FormatHtml(reader io.Reader, writer io.Writer, indent string, colors int) e
 			tagName, _ := tokenizer.TagName()
 
 			if forceNewLine {
-				_, _ = fmt.Fprint(writer, newline, strings.Repeat(indent, level))
+				_ = write(newline, strings.Repeat(indent, level))
 			}
-			_, _ = fmt.Fprint(writer, tagColor("</"+string(tagName)+">"))
+			_ = write(tagColor("</"+string(tagName)+">"))
 
 			hasContent = false
 			forceNewLine = true
 		case html.DoctypeToken:
 			docType := tokenizer.Text()
-			_, _ = fmt.Fprint(writer, tagColor("<!doctype "), string(docType), tagColor(">"), newline)
+			_ = write(tagColor("<!doctype "), string(docType), tagColor(">"), newline)
 		case html.CommentToken:
 			for _, commentLine := range strings.Split(string(tokenizer.Raw()), "\n") {
 				if !hasContent && level > 0 {
-					_, _ = fmt.Fprint(writer, newline, strings.Repeat(indent, level))
+					_ = write(newline, strings.Repeat(indent, level))
 				}
-				_, _ = fmt.Fprint(writer, commentColor(commentLine))
+				_ = write(commentColor(commentLine))
 			}
 
 			if level == 0 {
-				_, _ = fmt.Fprint(writer, newline)
+				_ = write(newline)
 			}
 		}
 	}
 
-	_, _ = fmt.Fprint(writer, "\n")
-
-	return nil
+	return write("\n")
 }
 
 func FormatJson(reader io.Reader, writer io.Writer, indent string, colors int) error {
