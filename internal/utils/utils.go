@@ -9,7 +9,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -43,18 +42,6 @@ type QueryOptions struct {
 	Indent   string
 	Colors   int
 }
-
-const (
-	jsonTokenTopValue = iota
-	jsonTokenArrayStart
-	jsonTokenArrayValue
-	jsonTokenArrayComma
-	jsonTokenObjectStart
-	jsonTokenObjectKey
-	jsonTokenObjectColon
-	jsonTokenObjectValue
-	jsonTokenObjectComma
-)
 
 func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) error {
 	decoder := xml.NewDecoder(reader)
@@ -435,12 +422,125 @@ func FormatJson(reader io.Reader, writer io.Writer, indent string, colors int) e
 	attrColor := color.New(color.FgHiBlue).SprintFunc()
 	valueColor := color.New(color.FgGreen).SprintFunc()
 
-	level := 0
-	suffix := ""
-	prefix := ""
 	newline := "\n"
 	if indent == "" {
 		newline = ""
+	}
+	write := func(args ...any) error {
+		_, err := fmt.Fprint(writer, args...)
+		return err
+	}
+
+	var formatToken func(json.Token, int) error
+	formatToken = func(token json.Token, level int) error {
+		switch typedToken := token.(type) {
+		case json.Delim:
+			switch rune(typedToken) {
+			case '{':
+				if err := write(tagColor("{")); err != nil {
+					return err
+				}
+				level++
+				index := 0
+				for decoder.More() {
+					if index > 0 {
+						if err := write(",", newline); err != nil {
+							return err
+						}
+					} else if err := write(newline); err != nil {
+						return err
+					}
+					if err := write(strings.Repeat(indent, level)); err != nil {
+						return err
+					}
+
+					keyToken, err := decoder.Token()
+					if err != nil {
+						return err
+					}
+					key, ok := keyToken.(string)
+					if !ok {
+						return fmt.Errorf("expected JSON object key, got %T", keyToken)
+					}
+
+					valueToken, err := decoder.Token()
+					if err != nil {
+						return err
+					}
+
+					if err := write(attrColor(strconv.Quote(key)), ": "); err != nil {
+						return err
+					}
+					if err := formatToken(valueToken, level); err != nil {
+						return err
+					}
+					index++
+				}
+				level--
+
+				endToken, err := decoder.Token()
+				if err != nil {
+					return err
+				}
+				if endToken != json.Delim('}') {
+					return fmt.Errorf("expected JSON object end, got %v", endToken)
+				}
+				if index > 0 {
+					return write(newline, strings.Repeat(indent, level), tagColor("}"))
+				}
+				return write(tagColor("}"))
+			case '[':
+				if err := write(tagColor("[")); err != nil {
+					return err
+				}
+				level++
+				index := 0
+				for decoder.More() {
+					if index > 0 {
+						if err := write(",", newline); err != nil {
+							return err
+						}
+					} else if err := write(newline); err != nil {
+						return err
+					}
+					if err := write(strings.Repeat(indent, level)); err != nil {
+						return err
+					}
+
+					valueToken, err := decoder.Token()
+					if err != nil {
+						return err
+					}
+					if err := formatToken(valueToken, level); err != nil {
+						return err
+					}
+					index++
+				}
+				level--
+
+				endToken, err := decoder.Token()
+				if err != nil {
+					return err
+				}
+				if endToken != json.Delim(']') {
+					return fmt.Errorf("expected JSON array end, got %v", endToken)
+				}
+				if index > 0 {
+					return write(newline, strings.Repeat(indent, level), tagColor("]"))
+				}
+				return write(tagColor("]"))
+			default:
+				return fmt.Errorf("unexpected JSON delimiter %q", typedToken)
+			}
+		case string:
+			return write(valueColor(strconv.Quote(typedToken)))
+		case float64, json.Number, bool:
+			return write(valueColor(typedToken))
+		case nil:
+			return write(valueColor("null"))
+		}
+
+		return nil
 	}
 
 	for {
@@ -454,66 +554,12 @@ func FormatJson(reader io.Reader, writer io.Writer, indent string, colors int) e
 			return err
 		}
 
-		v := reflect.ValueOf(*decoder)
-		tokenState := v.FieldByName("tokenState").Int()
-
-		switch tokenType := token.(type) {
-		case json.Delim:
-			switch rune(tokenType) {
-			case '{':
-				_, _ = fmt.Fprint(writer, prefix, tagColor("{"), newline)
-				level++
-				suffix = strings.Repeat(indent, level)
-			case '}':
-				if level > 0 {
-					level--
-				}
-				_, _ = fmt.Fprint(writer, newline, strings.Repeat(indent, level), tagColor("}"))
-				if tokenState == jsonTokenArrayComma {
-					suffix = "," + newline + strings.Repeat(indent, level)
-				}
-			case '[':
-				_, _ = fmt.Fprint(writer, prefix, tagColor("["), newline)
-				level++
-				suffix = strings.Repeat(indent, level)
-			case ']':
-				if level > 0 {
-					level--
-				}
-				_, _ = fmt.Fprint(writer, newline, strings.Repeat(indent, level), tagColor("]"))
-			}
-		case string:
-			escapedToken := strconv.Quote(token.(string))
-			value := valueColor(escapedToken)
-			if tokenState == jsonTokenObjectColon {
-				value = attrColor(escapedToken)
-			}
-			_, _ = fmt.Fprintf(writer, "%s%s", prefix, value)
-		case float64:
-			_, _ = fmt.Fprintf(writer, "%s%v", prefix, valueColor(token))
-		case json.Number:
-			_, _ = fmt.Fprintf(writer, "%s%v", prefix, valueColor(token))
-		case bool:
-			_, _ = fmt.Fprintf(writer, "%s%v", prefix, valueColor(token))
-		case nil:
-			_, _ = fmt.Fprintf(writer, "%s%s", prefix, valueColor("null"))
+		if err := formatToken(token, 0); err != nil {
+			return err
 		}
-
-		switch tokenState {
-		case jsonTokenObjectColon:
-			suffix = ": "
-		case jsonTokenObjectComma:
-			suffix = "," + newline + strings.Repeat(indent, level)
-		case jsonTokenArrayComma:
-			suffix = "," + newline + strings.Repeat(indent, level)
-		}
-
-		prefix = suffix
 	}
 
-	_, _ = fmt.Fprint(writer, "\n")
-
-	return nil
+	return write("\n")
 }
 
 func IsHTML(input string) bool {

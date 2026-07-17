@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -10,6 +11,28 @@ import (
 
 	"github.com/stretchr/testify/assert"
 )
+
+var errWriteFailed = errors.New("write failed")
+
+type failingWriter struct{}
+
+func (failingWriter) Write([]byte) (int, error) {
+	return 0, errWriteFailed
+}
+
+type failOnWriteWriter struct {
+	count  int
+	failOn int
+}
+
+func (writer *failOnWriteWriter) Write(data []byte) (int, error) {
+	writer.count++
+	if writer.count == writer.failOn {
+		return 0, errWriteFailed
+	}
+
+	return len(data), nil
+}
 
 func getFileReader(filename string) io.Reader {
 	reader, err := os.Open(filename)
@@ -100,6 +123,32 @@ func TestFormatJson(t *testing.T) {
 		assert.Nil(t, formatErr)
 		assert.Equal(t, expectedJson, output.String())
 	}
+
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{"empty object", "{}", "{}\n"},
+		{"empty array", "[]", "[]\n"},
+		{"nested empty containers in object", "{\"a\":{},\"b\":[]}", "{\n  \"a\": {},\n  \"b\": []\n}\n"},
+		{"nested empty containers in array", "[{},[]]", "[\n  {},\n  []\n]\n"},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			output := new(strings.Builder)
+			formatErr := FormatJson(strings.NewReader(testCase.input), output, "  ", ColorsDisabled)
+			assert.NoError(t, formatErr)
+			assert.Equal(t, testCase.expected, output.String())
+		})
+	}
+
+	formatErr := FormatJson(strings.NewReader("{}"), failingWriter{}, "  ", ColorsDisabled)
+	assert.ErrorIs(t, formatErr, errWriteFailed)
+
+	formatErr = FormatJson(strings.NewReader("{}"), &failOnWriteWriter{failOn: 3}, "  ", ColorsDisabled)
+	assert.ErrorIs(t, formatErr, errWriteFailed)
 }
 
 func TestXPathQuery(t *testing.T) {
