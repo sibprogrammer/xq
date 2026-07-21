@@ -45,3 +45,34 @@ func TestXmlToJSON(t *testing.T) {
 		assert.Equal(t, expectedJson, output.String())
 	}
 }
+
+func TestElementOrderInJSON(t *testing.T) {
+	// Test that element order is preserved in JSON output
+	xmlInput := `<root>
+		<command-name>/status</command-name>
+		<command-message>status</command-message>
+		<command-args></command-args>
+	</root>`
+
+	node, err := xmlquery.Parse(strings.NewReader(xmlInput))
+	assert.NoError(t, err)
+
+	result := NodeToJSON(node, -1)
+	assert.NotNil(t, result)
+
+	// Marshal to JSON and check order
+	jsonData, err := json.Marshal(result)
+	assert.NoError(t, err)
+
+	jsonStr := string(jsonData)
+	t.Logf("JSON output: %s", jsonStr)
+
+	// Find positions of each key in the JSON string
+	namePos := strings.Index(jsonStr, "command-name")
+	messagePos := strings.Index(jsonStr, "command-message")
+	argsPos := strings.Index(jsonStr, "command-args")
+
+	// Check that they appear in the original order
+	assert.True(t, namePos < messagePos, "command-name should appear before command-message")
+	assert.True(t, messagePos < argsPos, "command-message should appear before command-args")
+}

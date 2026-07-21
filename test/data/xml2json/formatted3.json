@@ -1,6 +1,6 @@
 {
   "root": {
-    "#text": "text\nmore text",
-    "child": "value"
+    "child": "value",
+    "#text": "text\nmore text"
   }
 }
