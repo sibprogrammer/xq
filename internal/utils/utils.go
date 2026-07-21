@@ -49,6 +49,7 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 
 	level := 0
 	hasContent := false
+	spaceContent := ""
 	nsAliases := map[string]string{"http://www.w3.org/XML/1998/namespace": "xml"}
 	lastTagName := ""
 	startTagClosed := true
@@ -100,6 +101,7 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 
 			_ = write(tagColor("?>"), newline)
 		case xml.StartElement:
+			spaceContent = ""
 			if !startTagClosed {
 				_ = write(tagColor(">"))
 				startTagClosed = true
@@ -130,7 +132,12 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 			level++
 			hasContent = false
 		case xml.CharData:
-			str := normalizeSpaces(string(typedToken), indent, level)
+			chars := string(typedToken)
+			str := normalizeSpaces(chars, indent, level)
+			spaceContent = ""
+			if str == "" && chars != "" && !strings.Contains(chars, "\n") && !startTagClosed {
+				spaceContent = chars
+			}
 			hasContent = str != ""
 			if hasContent && !startTagClosed {
 				_ = write(tagColor(">"))
@@ -141,6 +148,7 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 			}
 			_ = write(str)
 		case xml.Comment:
+			spaceContent = ""
 			if !startTagClosed {
 				_ = write(tagColor(">"))
 				startTagClosed = true
@@ -172,6 +180,9 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 						startTagClosed = true
 					}
 					_ = write(newline, strings.Repeat(indent, level), tagColor("</"+currentTagName+">"))
+				} else if spaceContent != "" {
+					_ = write(tagColor(">"), spaceContent, tagColor("</"+currentTagName+">"))
+					startTagClosed = true
 				} else {
 					_ = write(tagColor("/>"))
 					startTagClosed = true
@@ -179,12 +190,14 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 			} else {
 				_ = write(tagColor("</" + currentTagName + ">"))
 			}
+			spaceContent = ""
 			hasContent = false
 			lastTagName = currentTagName
 			if startTagClosed {
 				lastTagName = ""
 			}
 		case xml.Directive:
+			spaceContent = ""
 			_ = write(tagColor("<!"), string(typedToken), tagColor(">"))
 			_ = write(newline, strings.Repeat(indent, level))
 		default:
@@ -314,6 +327,8 @@ func FormatHtml(reader io.Reader, writer io.Writer, indent string, colors int) e
 
 	level := 0
 	hasContent := false
+	tagJustOpened := false
+	spaceContent := ""
 	forceNewLine := false
 	selfClosingTags := getSelfClosingTags()
 	newline := "\n"
@@ -339,7 +354,12 @@ func FormatHtml(reader io.Reader, writer io.Writer, indent string, colors int) e
 
 		switch token {
 		case html.TextToken:
-			str := normalizeSpaces(string(tokenizer.Text()), indent, level)
+			chars := string(tokenizer.Text())
+			str := normalizeSpaces(chars, indent, level)
+			spaceContent = ""
+			if str == "" && chars != "" && !strings.Contains(chars, "\n") && tagJustOpened {
+				spaceContent = chars
+			}
 			hasContent = str != ""
 			if hasContent {
 				str, _ = escapeText(str)
@@ -375,12 +395,15 @@ func FormatHtml(reader io.Reader, writer io.Writer, indent string, colors int) e
 
 			_ = write(tagColor("<"+string(tagName)), attrsStr)
 
+			spaceContent = ""
+			tagJustOpened = false
 			if selfClosingTag {
 				_ = write(tagColor("/>"))
 			} else {
 				level++
 				_ = write(tagColor(">"))
 				forceNewLine = false
+				tagJustOpened = true
 			}
 		case html.EndTagToken:
 			if level > 0 {
@@ -390,15 +413,21 @@ func FormatHtml(reader io.Reader, writer io.Writer, indent string, colors int) e
 
 			if forceNewLine {
 				_ = write(newline, strings.Repeat(indent, level))
+			} else if spaceContent != "" {
+				_ = write(spaceContent)
 			}
 			_ = write(tagColor("</" + string(tagName) + ">"))
 
 			hasContent = false
 			forceNewLine = true
+			tagJustOpened = false
+			spaceContent = ""
 		case html.DoctypeToken:
 			docType := tokenizer.Text()
 			_ = write(tagColor("<!doctype "), string(docType), tagColor(">"), newline)
 		case html.CommentToken:
+			spaceContent = ""
+			tagJustOpened = false
 			for _, commentLine := range strings.Split(string(tokenizer.Raw()), "\n") {
 				if !hasContent && level > 0 {
 					_ = write(newline, strings.Repeat(indent, level))
