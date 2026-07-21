@@ -69,6 +69,10 @@ func TestRootCmd(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Contains(t, output, "{")
 
+	output, err = execute(command, "--no-pager", xmlFilePath)
+	assert.Nil(t, err)
+	assert.Contains(t, output, "first_name")
+
 	output, err = execute(command, "--tab", xmlFilePath)
 	assert.Nil(t, err)
 	assert.Contains(t, output, "\t")

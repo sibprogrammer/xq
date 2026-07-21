@@ -14,6 +14,7 @@ type ConfigOptions struct {
 	Color   bool
 	Html    bool
 	Node    bool
+	NoPager bool
 }
 
 var config ConfigOptions
@@ -25,6 +26,7 @@ func LoadConfig(fileName string) error {
 	config.Color = false
 	config.Html = false
 	config.Node = false
+	config.NoPager = false
 
 	file, err := os.Open(fileName)
 	if os.IsNotExist(err) {
@@ -61,6 +63,8 @@ func LoadConfig(fileName string) error {
 			config.NoColor, _ = strconv.ParseBool(value)
 		case "color":
 			config.Color, _ = strconv.ParseBool(value)
+		case "no-pager":
+			config.NoPager, _ = strconv.ParseBool(value)
 		}
 	}
 

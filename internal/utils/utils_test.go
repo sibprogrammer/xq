@@ -239,7 +239,12 @@ func TestIsJSON(t *testing.T) {
 func TestPagerPrint(t *testing.T) {
 	var output bytes.Buffer
 	fileReader := getFileReader(filepath.Join("..", "..", "test", "data", "html", "formatted.html"))
-	err := PagerPrint(fileReader, &output)
+	err := PagerPrint(fileReader, &output, "")
+	assert.Nil(t, err)
+	assert.Contains(t, output.String(), "<html>")
+
+	fileReader = getFileReader(filepath.Join("..", "..", "test", "data", "html", "formatted.html"))
+	err = PagerPrint(fileReader, &output, "cat")
 	assert.Nil(t, err)
 	assert.Contains(t, output.String(), "<html>")
 }

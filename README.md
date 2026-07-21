@@ -97,6 +97,13 @@ This will output the result in JSON format, preserving the XML structure. The JS
 - Repeated elements are automatically converted to arrays
 - Elements with only text content are represented as strings
 
+The output is piped to a pager if it is defined via the `XQ_PAGER` or `PAGER` environment
+variable (`XQ_PAGER` takes precedence). The pager can be disabled using the `--no-pager` option:
+
+```
+xq --no-pager test/data/xml/unformatted.xml
+```
+
 # Installation
 
 The preferable ways to install the utility are described below.

@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -178,7 +177,7 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 					startTagClosed = true
 				}
 			} else {
-				_ = write(tagColor("</"+currentTagName+">"))
+				_ = write(tagColor("</" + currentTagName + ">"))
 			}
 			hasContent = false
 			lastTagName = currentTagName
@@ -392,7 +391,7 @@ func FormatHtml(reader io.Reader, writer io.Writer, indent string, colors int) e
 			if forceNewLine {
 				_ = write(newline, strings.Repeat(indent, level))
 			}
-			_ = write(tagColor("</"+string(tagName)+">"))
+			_ = write(tagColor("</" + string(tagName) + ">"))
 
 			hasContent = false
 			forceNewLine = true
@@ -587,15 +586,19 @@ func IsJSON(input string) bool {
 	return matched
 }
 
-func PagerPrint(reader io.Reader, writer io.Writer) error {
-	pager := os.Getenv("PAGER")
+func PagerPrint(reader io.Reader, writer io.Writer, pager string) error {
+	var args []string
 
-	if pager != "less" {
+	if pager == "" {
 		_, err := io.Copy(writer, reader)
 		return err
 	}
 
-	cmd := exec.Command(pager, "--quit-if-one-screen", "--no-init", "--RAW-CONTROL-CHARS")
+	if pager == "less" {
+		args = append(args, "--quit-if-one-screen", "--no-init", "--RAW-CONTROL-CHARS")
+	}
+
+	cmd := exec.Command(pager, args...)
 	cmd.Stdin = reader
 	cmd.Stdout = writer
 

@@ -129,7 +129,7 @@ func NewRootCmd() *cobra.Command {
 				}
 			}()
 
-			return utils.PagerPrint(pr, cmd.OutOrStdout())
+			return utils.PagerPrint(pr, cmd.OutOrStdout(), getPager(cmd.Flags()))
 		},
 	}
 }
@@ -165,6 +165,7 @@ func InitFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().Bool("compact", false, "Compact JSON output (no indentation)")
 	cmd.PersistentFlags().IntP("depth", "d", -1, "Maximum nesting depth for JSON output (-1 for unlimited)")
 	cmd.PersistentFlags().BoolP("in-place", "i", false, "Format file in place")
+	cmd.PersistentFlags().Bool("no-pager", utils.GetConfig().NoPager, "Disable pager for the output")
 }
 
 func Execute() {
@@ -207,6 +208,19 @@ func getXpathQuery(flags *pflag.FlagSet) (query string, single bool) {
 
 	query, _ = flags.GetString("extract")
 	return query, true
+}
+
+func getPager(flags *pflag.FlagSet) string {
+	noPager, _ := flags.GetBool("no-pager")
+	if noPager {
+		return ""
+	}
+
+	if pager, ok := os.LookupEnv("XQ_PAGER"); ok {
+		return pager
+	}
+
+	return os.Getenv("PAGER")
 }
 
 func getColorMode(flags *pflag.FlagSet) int {

@@ -1,3 +1,4 @@
 # config
 indent = 8
-no-color=1
+no-color = 1
+no-pager = 1

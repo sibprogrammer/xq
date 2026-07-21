@@ -16,6 +16,7 @@ func TestLoadConfig(t *testing.T) {
 	config = GetConfig()
 	assert.Equal(t, config.Indent, 8)
 	assert.Equal(t, config.NoColor, true)
+	assert.Equal(t, config.NoPager, true)
 
 	err = LoadConfig(filepath.Join("..", "..", "test", "data", "config", "config2"))
 	assert.Nil(t, err)

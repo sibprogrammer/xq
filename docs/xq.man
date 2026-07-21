@@ -78,6 +78,19 @@ Returns the node content instead of text.
 .RS 4
 Formats the file in place.
 .RE
+.PP
+\fB--no-pager\fR
+.RS 4
+Disables pager for the output.
+.RE
+.SH ENVIRONMENT
+.PP
+\fBXQ_PAGER\fR, \fBPAGER\fR
+.RS 4
+Specifies the pager command used to display the output (e.g., \fBless\fR or \fBmore\fR).
+\fBXQ_PAGER\fR takes precedence over \fBPAGER\fR.
+If the variable is set to an empty value, the output is printed without a pager.
+.RE
 .SH EXAMPLES
 .PP
 Format an XML file and highlight the syntax:
