@@ -45,3 +45,45 @@ func TestXmlToJSON(t *testing.T) {
 		assert.Equal(t, expectedJson, output.String())
 	}
 }
+
+func TestSelfClosingTagsHaveNullContent(t *testing.T) {
+	// Self-closing XML elements should have null content in JSON
+	xmlInput := `<root><self-closing/></root>`
+
+	node, err := xmlquery.Parse(strings.NewReader(xmlInput))
+	assert.NoError(t, err)
+
+	result := NodeToJSON(node, -1)
+	assert.NotNil(t, result)
+
+	resultMap, ok := result.(map[string]interface{})
+	assert.True(t, ok)
+
+	rootMap, ok := resultMap["root"].(map[string]interface{})
+	assert.True(t, ok)
+
+	assert.Nil(t, rootMap["self-closing"], "Self-closing tag should have null content")
+}
+
+func TestWhitespaceOnlyTagsAreSelfClosing(t *testing.T) {
+	// Establishes that the XML formatter treats whitespace-only elements as self-closing
+	xmlInput := `<root><spaces>  </spaces><newlines>
+</newlines><empty></empty><immediate-closing></immediate-closing></root>`
+
+	node, err := xmlquery.Parse(strings.NewReader(xmlInput))
+	assert.NoError(t, err)
+
+	result := NodeToJSON(node, -1)
+	assert.NotNil(t, result)
+
+	resultMap, ok := result.(map[string]interface{})
+	assert.True(t, ok)
+
+	rootMap, ok := resultMap["root"].(map[string]interface{})
+	assert.True(t, ok)
+
+	assert.Nil(t, rootMap["spaces"], "Spaces should have null content")
+	assert.Nil(t, rootMap["newlines"], "Newlines should have null content")
+	assert.Nil(t, rootMap["empty"], "Empty should have null content")
+	assert.Nil(t, rootMap["immediate-closing"], "Immediate-closing should have null content")
+}
