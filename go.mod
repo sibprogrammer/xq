@@ -1,6 +1,6 @@
 module github.com/sibprogrammer/xq
 
-go 1.26.1
+go 1.27.0
 
 require (
 	github.com/PuerkitoBio/goquery v1.13.0
