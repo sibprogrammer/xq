@@ -63,11 +63,38 @@ func SanitizeXmlVersion(reader io.Reader) (io.Reader, string) {
 	return io.MultiReader(bytes.NewReader(prefix), reader), version
 }
 
+type xmlSourceReader struct {
+	io.Reader
+	buffer *bytes.Buffer
+}
+
+func (reader *xmlSourceReader) Read(data []byte) (int, error) {
+	n, err := reader.Reader.Read(data)
+	if reader.buffer != nil {
+		_, _ = reader.buffer.Write(data[:n])
+	}
+	return n, err
+}
+
 func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) error {
 	sanitizedReader, origXmlVersion := SanitizeXmlVersion(reader)
-	decoder := xml.NewDecoder(sanitizedReader)
+	// CharData does not distinguish CDATA, so retain the source of each token.
+	var tokenBuffer bytes.Buffer
+	var tokenOffset int64
+	source := &xmlSourceReader{Reader: sanitizedReader, buffer: &tokenBuffer}
+	decoder := xml.NewDecoder(source)
 	decoder.Strict = false
-	decoder.CharsetReader = getCharsetReader
+	decoder.CharsetReader = func(charset string, input io.Reader) (io.Reader, error) {
+		converted, err := getCharsetReader(charset, input)
+		if err != nil {
+			return nil, err
+		}
+		// InputOffset counts decoded bytes after the encoding declaration.
+		source.buffer = nil
+		tokenBuffer.Reset()
+		tokenOffset = decoder.InputOffset()
+		return io.TeeReader(converted, &tokenBuffer), nil
+	}
 
 	level := 0
 	hasContent := false
@@ -113,6 +140,10 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 		if err != nil {
 			return err
 		}
+
+		offset := decoder.InputOffset()
+		rawToken := tokenBuffer.Next(int(offset - tokenOffset))
+		tokenOffset = offset
 
 		switch typedToken := token.(type) {
 		case xml.ProcInst:
@@ -177,13 +208,22 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 			level++
 			hasContent = false
 		case xml.CharData:
+			if bytes.HasPrefix(rawToken, []byte("<![CDATA[")) {
+				spaceContent = ""
+				if !startTagClosed {
+					closeTag(">", level-1)
+				}
+				hasContent = true
+				_ = write(string(rawToken))
+				break
+			}
 			chars := string(typedToken)
 			str := normalizeSpaces(chars, indent, level)
 			spaceContent = ""
 			if str == "" && chars != "" && !strings.Contains(chars, "\n") && !startTagClosed {
 				spaceContent = chars
 			}
-			hasContent = str != ""
+			hasContent = hasContent || str != ""
 			if hasContent && !startTagClosed {
 				closeTag(">", level-1)
 			}
