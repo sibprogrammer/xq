@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"testing/iotest"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -79,6 +80,45 @@ func TestFormatXml(t *testing.T) {
 		formatErr := FormatXml(unformattedXmlReader, output, "  ", ColorsDisabled)
 		assert.Nil(t, formatErr)
 		assert.Equal(t, expectedXml, output.String())
+	}
+}
+
+func TestFormatXmlCDATA(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{"issue example", "<tag><![CDATA[some text>]]></tag>", "<tag><![CDATA[some text>]]></tag>"},
+		{"plain text", "<tag><![CDATA[some text]]></tag>", "<tag><![CDATA[some text]]></tag>"},
+		{"special characters", "<tag><![CDATA[<p>&amp;</p>]]></tag>", "<tag><![CDATA[<p>&amp;</p>]]></tag>"},
+		{"empty", "<tag><![CDATA[]]></tag>", "<tag><![CDATA[]]></tag>"},
+		{"whitespace", "<tag><![CDATA[ \t\n  ]]></tag>", "<tag><![CDATA[ \t\n  ]]></tag>"},
+		{"line endings", "<tag><![CDATA[\r\n  text \r\n]]></tag>", "<tag><![CDATA[\r\n  text \r\n]]></tag>"},
+		{"adjacent sections", "<tag><![CDATA[one]]><![CDATA[]]><![CDATA[two]]></tag>", "<tag><![CDATA[one]]><![CDATA[]]><![CDATA[two]]></tag>"},
+		{"mixed text", "<tag>before<![CDATA[ inside ]]>after</tag>", "<tag>before<![CDATA[ inside ]]>after</tag>"},
+		{"entities", "<tag>&#x41;<![CDATA[text]]>&#x42;</tag>", "<tag>A<![CDATA[text]]>B</tag>"},
+		{"trailing whitespace", "<tag><![CDATA[text]]>\n  </tag>", "<tag><![CDATA[text]]></tag>"},
+		{"mixed elements", "<root><tag/><![CDATA[ text ]]><tag/></root>", "<root>\n  <tag/><![CDATA[ text ]]>\n  <tag/>\n</root>"},
+		{"XML 1.1", "<?xml version='1.1'?><tag><![CDATA[text]]></tag>", "<?xml version='1.1'?>\n<tag><![CDATA[text]]></tag>"},
+		{"converted charset", "<?xml version='1.0' encoding='windows-1251'?><tag>\xcf<![CDATA[\xf0\xe8\xe2\xe5\xf2]]></tag>", "<?xml version='1.0' encoding='windows-1251'?>\n<tag>П<![CDATA[ривет]]></tag>"},
+		{"long token", "<tag>" + strings.Repeat("x", 8192) + "<![CDATA[text]]></tag>", "<tag>" + strings.Repeat("x", 8192) + "<![CDATA[text]]></tag>"},
+		{"long converted token", "<?xml version='1.0' encoding='windows-1251'?><tag>" + strings.Repeat("\xcf", 8192) + "<![CDATA[\xf0\xe8\xe2\xe5\xf2]]></tag>", "<?xml version='1.0' encoding='windows-1251'?>\n<tag>" + strings.Repeat("П", 8192) + "<![CDATA[ривет]]></tag>"},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			for _, chunked := range []bool{false, true} {
+				var reader io.Reader = strings.NewReader(testCase.input)
+				if chunked {
+					reader = iotest.OneByteReader(reader)
+				}
+				output := new(strings.Builder)
+				err := FormatXml(reader, output, "  ", ColorsDisabled)
+				assert.NoError(t, err)
+				assert.Equal(t, testCase.expected+"\n", output.String())
+			}
+		})
 	}
 }
 
