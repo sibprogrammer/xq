@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -248,6 +249,21 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 	return write("\n")
 }
 
+func formatXPathNumber(number float64) string {
+	switch {
+	case math.IsNaN(number):
+		return "NaN"
+	case math.IsInf(number, 1):
+		return "Infinity"
+	case math.IsInf(number, -1):
+		return "-Infinity"
+	case number == 0:
+		return "0"
+	default:
+		return strconv.FormatFloat(number, 'f', -1, 64)
+	}
+}
+
 func XPathQuery(reader io.Reader, writer io.Writer, query string, singleNode bool, options QueryOptions) (errRes error) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -294,7 +310,7 @@ func XPathQuery(reader io.Reader, writer io.Writer, query string, singleNode boo
 
 		switch typedVal := val.(type) {
 		case float64:
-			_, err = fmt.Fprintf(writer, "%.0f\n", typedVal)
+			_, err = fmt.Fprintf(writer, "%s\n", formatXPathNumber(typedVal))
 		case bool:
 			found = typedVal
 			_, err = fmt.Fprintf(writer, "%t\n", typedVal)
