@@ -182,6 +182,29 @@ func TestXPathQuery(t *testing.T) {
 	}
 }
 
+func TestXPathQueryNumber(t *testing.T) {
+	tests := []struct {
+		query    string
+		expected string
+	}{
+		{query: "sum(//price)", expected: "3.5"},
+		{query: "count(//price)", expected: "2"},
+		{query: "1 div 0", expected: "Infinity"},
+		{query: "-1 div 0", expected: "-Infinity"},
+		{query: "0 div 0", expected: "NaN"},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.query, func(t *testing.T) {
+			output := new(strings.Builder)
+			reader := strings.NewReader(`<root><price>1.2</price><price>2.3</price></root>`)
+			err := XPathQuery(reader, output, testCase.query, false, QueryOptions{})
+			assert.NoError(t, err)
+			assert.Equal(t, testCase.expected, strings.Trim(output.String(), "\n"))
+		})
+	}
+}
+
 func TestXPathQueryNoMatch(t *testing.T) {
 	type test struct {
 		node   bool
