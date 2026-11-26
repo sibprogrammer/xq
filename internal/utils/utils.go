@@ -790,25 +790,32 @@ func (s *nsScopes) lookup(prefix string) string {
 }
 
 // elementName returns an element name with no prefix if its namespace is the default one in the
-// current scope, else as attrName does.
+// current scope, else as prefixedName does.
 func (s *nsScopes) elementName(name xml.Name) string {
 	if s.lookup("") == name.Space {
 		return name.Local
 	}
-	return s.attrName(name)
+	return s.prefixedName(name)
 }
 
-// attrName returns an attribute name with the outermost prefix bound to its namespace in the
-// current scope. A default namespace applies only to element names, never to attributes, so an
-// unprefixed attribute has no namespace. An xmlns:prefix declaration, which the decoder gives the
-// namespace xmlns, keeps that prefix. A namespace with no such prefix is written out as is: the
-// decoder gives an unbound prefix as its own namespace.
+// attrName returns an attribute name as prefixedName does, except that an xmlns:prefix
+// declaration, which the decoder gives the namespace xmlns, keeps that prefix. So does an attribute
+// whose prefix is bound to the URI xmlns, which the decoder reports identically. A default
+// namespace applies only to element names, never to attributes, so an unprefixed attribute has no
+// namespace.
 func (s *nsScopes) attrName(name xml.Name) string {
-	if name.Space == "" {
-		return name.Local
-	}
 	if name.Space == "xmlns" {
 		return "xmlns:" + name.Local
+	}
+	return s.prefixedName(name)
+}
+
+// prefixedName returns name with the outermost prefix bound to its namespace in the current scope.
+// A namespace with no such prefix is written out as is: the decoder gives an unbound prefix as its
+// own namespace.
+func (s *nsScopes) prefixedName(name xml.Name) string {
+	if name.Space == "" {
+		return name.Local
 	}
 	for _, prefix := range s.prefixes[name.Space] {
 		if prefix != "" && s.lookup(prefix) == name.Space {
