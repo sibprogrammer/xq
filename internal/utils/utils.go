@@ -74,6 +74,8 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 	hasContent := false
 	spaceContent := ""
 	nsAliases := map[string]string{"http://www.w3.org/XML/1998/namespace": "xml"}
+	// Unprefixed attributes have no namespace, so attribute names take only prefixed bindings.
+	attrPrefixes := map[string]string{"http://www.w3.org/XML/1998/namespace": "xml"}
 	lastTagName := ""
 	startTagClosed := true
 	multilineTag := false
@@ -153,13 +155,16 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 				if attr.Name.Space == "xmlns" && nsAliases[attr.Value] == "" {
 					nsAliases[attr.Value] = attr.Name.Local
 				}
+				if _, ok := attrPrefixes[attr.Value]; attr.Name.Space == "xmlns" && !ok {
+					attrPrefixes[attr.Value] = attr.Name.Local
+				}
 				if attr.Name.Space == "" && attr.Name.Local == "xmlns" {
 					nsAliases[attr.Value] = ""
 				}
 			}
 			for _, attr := range typedToken.Attr {
 				escapedValue, _ := escapeText(attr.Value)
-				attrName := getTokenFullName(attr.Name, nsAliases)
+				attrName := getTokenFullName(attr.Name, attrPrefixes)
 				attrs = append(attrs, attrName+attrColor("=\""+escapedValue+"\""))
 				attrsLength += utf8.RuneCountInString(attrName) + utf8.RuneCountInString(escapedValue) + len(`="" `)
 			}
