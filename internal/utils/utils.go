@@ -147,6 +147,8 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 			}
 			var attrs []string
 			attrsLength := 0
+			// Register all namespace declarations first: an attribute may use a prefix declared
+			// later in the same tag.
 			for _, attr := range typedToken.Attr {
 				if attr.Name.Space == "xmlns" && nsAliases[attr.Value] == "" {
 					nsAliases[attr.Value] = attr.Name.Local
@@ -154,6 +156,8 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 				if attr.Name.Local == "xmlns" {
 					nsAliases[attr.Value] = ""
 				}
+			}
+			for _, attr := range typedToken.Attr {
 				escapedValue, _ := escapeText(attr.Value)
 				attrName := getTokenFullName(attr.Name, nsAliases)
 				attrs = append(attrs, attrName+attrColor("=\""+escapedValue+"\""))
