@@ -153,7 +153,7 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 				if attr.Name.Space == "xmlns" && nsAliases[attr.Value] == "" {
 					nsAliases[attr.Value] = attr.Name.Local
 				}
-				if attr.Name.Local == "xmlns" {
+				if attr.Name.Space == "" && attr.Name.Local == "xmlns" {
 					nsAliases[attr.Value] = ""
 				}
 			}
