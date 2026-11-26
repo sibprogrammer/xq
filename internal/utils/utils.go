@@ -73,7 +73,7 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 	level := 0
 	hasContent := false
 	spaceContent := ""
-	scopes := nsScopes{{{prefix: "xml", uri: "http://www.w3.org/XML/1998/namespace"}}}
+	scopes := newNsScopes()
 	lastTagName := ""
 	startTagClosed := true
 	multilineTag := false
@@ -157,7 +157,7 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 					bindings = append(bindings, nsBinding{prefix: "", uri: attr.Value})
 				}
 			}
-			scopes = append(scopes, bindings)
+			scopes.push(bindings)
 			for _, attr := range typedToken.Attr {
 				escapedValue, _ := escapeText(attr.Value)
 				attrName := scopes.attrName(attr.Name)
@@ -222,9 +222,7 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 				level--
 			}
 			currentTagName := scopes.elementName(typedToken.Name)
-			if len(scopes) > 1 {
-				scopes = scopes[:len(scopes)-1]
-			}
+			scopes.pop()
 			if !hasContent {
 				if lastTagName != currentTagName {
 					if !startTagClosed {
@@ -734,25 +732,66 @@ type nsBinding struct {
 	prefix, uri string
 }
 
-// nsScopes holds the namespace declarations of each open element, outermost first, after the
-// predeclared xml prefix.
-type nsScopes [][]nsBinding
+// nsScopes holds the namespace declarations of each open element, after the predeclared xml
+// prefix, indexed both ways.
+type nsScopes struct {
+	// frames has the declarations of each open element, outermost first.
+	frames [][]nsBinding
+	// uris has, for each prefix, the URIs it is bound to, innermost last.
+	uris map[string][]string
+	// prefixes has, for each URI, the prefixes bound to it, outermost first.
+	prefixes map[string][]string
+}
+
+func newNsScopes() *nsScopes {
+	s := &nsScopes{uris: map[string][]string{}, prefixes: map[string][]string{}}
+	s.push([]nsBinding{{prefix: "xml", uri: "http://www.w3.org/XML/1998/namespace"}})
+	return s
+}
+
+// push adds the declarations of an element being opened.
+func (s *nsScopes) push(bindings []nsBinding) {
+	s.frames = append(s.frames, bindings)
+	for _, b := range bindings {
+		s.uris[b.prefix] = append(s.uris[b.prefix], b.uri)
+		s.prefixes[b.uri] = append(s.prefixes[b.uri], b.prefix)
+	}
+}
+
+// pop removes the declarations of the innermost open element, but never the predeclared ones.
+func (s *nsScopes) pop() {
+	if len(s.frames) <= 1 {
+		return
+	}
+	bindings := s.frames[len(s.frames)-1]
+	s.frames = s.frames[:len(s.frames)-1]
+	for i := len(bindings) - 1; i >= 0; i-- {
+		b := bindings[i]
+		dropLast(s.uris, b.prefix)
+		dropLast(s.prefixes, b.uri)
+	}
+}
+
+// dropLast removes the last value listed under key, and the key once it has none.
+func dropLast(m map[string][]string, key string) {
+	if values := m[key]; len(values) > 1 {
+		m[key] = values[:len(values)-1]
+	} else {
+		delete(m, key)
+	}
+}
 
 // lookup returns the namespace URI that prefix is bound to in the current scope, or "" if none.
-func (s nsScopes) lookup(prefix string) string {
-	for i := len(s) - 1; i >= 0; i-- {
-		for j := len(s[i]) - 1; j >= 0; j-- {
-			if s[i][j].prefix == prefix {
-				return s[i][j].uri
-			}
-		}
+func (s *nsScopes) lookup(prefix string) string {
+	if uris := s.uris[prefix]; len(uris) > 0 {
+		return uris[len(uris)-1]
 	}
 	return ""
 }
 
 // elementName returns an element name with no prefix if its namespace is the default one in the
 // current scope, else as attrName does.
-func (s nsScopes) elementName(name xml.Name) string {
+func (s *nsScopes) elementName(name xml.Name) string {
 	if s.lookup("") == name.Space {
 		return name.Local
 	}
@@ -764,18 +803,16 @@ func (s nsScopes) elementName(name xml.Name) string {
 // unprefixed attribute has no namespace. An xmlns:prefix declaration, which the decoder gives the
 // namespace xmlns, keeps that prefix. A namespace with no such prefix is written out as is: the
 // decoder gives an unbound prefix as its own namespace.
-func (s nsScopes) attrName(name xml.Name) string {
+func (s *nsScopes) attrName(name xml.Name) string {
 	if name.Space == "" {
 		return name.Local
 	}
 	if name.Space == "xmlns" {
 		return "xmlns:" + name.Local
 	}
-	for _, bindings := range s {
-		for _, b := range bindings {
-			if b.prefix != "" && b.uri == name.Space && s.lookup(b.prefix) == name.Space {
-				return b.prefix + ":" + name.Local
-			}
+	for _, prefix := range s.prefixes[name.Space] {
+		if prefix != "" && s.lookup(prefix) == name.Space {
+			return prefix + ":" + name.Local
 		}
 	}
 	return name.Space + ":" + name.Local
