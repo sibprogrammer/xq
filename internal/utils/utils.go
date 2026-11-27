@@ -800,9 +800,9 @@ func (s *nsScopes) elementName(name xml.Name) string {
 
 // attrName returns an attribute name as prefixedName does, except that an xmlns:prefix
 // declaration, which the decoder gives the namespace xmlns, keeps that prefix. So does an attribute
-// whose prefix is bound to the URI xmlns, which the decoder reports identically. A default
-// namespace applies only to element names, never to attributes, so an unprefixed attribute has no
-// namespace.
+// whose prefix is bound to the namespace name xmlns (a deprecated relative URI reference), which
+// the decoder reports identically. A default namespace applies only to element names, never to
+// attributes, so an unprefixed attribute has no namespace.
 func (s *nsScopes) attrName(name xml.Name) string {
 	if name.Space == "xmlns" {
 		return "xmlns:" + name.Local
