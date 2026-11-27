@@ -73,7 +73,7 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 	level := 0
 	hasContent := false
 	spaceContent := ""
-	nsAliases := map[string]string{"http://www.w3.org/XML/1998/namespace": "xml"}
+	scopes := newNsScopes()
 	lastTagName := ""
 	startTagClosed := true
 	multilineTag := false
@@ -147,19 +147,23 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 			}
 			var attrs []string
 			attrsLength := 0
+			// A name may use a prefix declared later in its tag, so push the declarations first.
+			var bindings []nsBinding
 			for _, attr := range typedToken.Attr {
-				if attr.Name.Space == "xmlns" && nsAliases[attr.Value] == "" {
-					nsAliases[attr.Value] = attr.Name.Local
+				if attr.Name.Space == "xmlns" {
+					bindings = append(bindings, nsBinding{prefix: attr.Name.Local, uri: attr.Value})
+				} else if attr.Name.Space == "" && attr.Name.Local == "xmlns" {
+					bindings = append(bindings, nsBinding{prefix: "", uri: attr.Value})
 				}
-				if attr.Name.Local == "xmlns" {
-					nsAliases[attr.Value] = ""
-				}
+			}
+			scopes.push(bindings)
+			for _, attr := range typedToken.Attr {
 				escapedValue, _ := escapeText(attr.Value)
-				attrName := getTokenFullName(attr.Name, nsAliases)
+				attrName := scopes.attrName(attr.Name)
 				attrs = append(attrs, attrName+attrColor("=\""+escapedValue+"\""))
 				attrsLength += utf8.RuneCountInString(attrName) + utf8.RuneCountInString(escapedValue) + len(`="" `)
 			}
-			currentTagName := getTokenFullName(typedToken.Name, nsAliases)
+			currentTagName := scopes.elementName(typedToken.Name)
 			if attrsLength > attrsLineLengthLimit && newline != "" {
 				_ = write(tagColor("<" + currentTagName))
 				for _, attr := range attrs {
@@ -216,7 +220,8 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 			if level > 0 {
 				level--
 			}
-			currentTagName := getTokenFullName(typedToken.Name, nsAliases)
+			currentTagName := scopes.elementName(typedToken.Name)
+			scopes.pop()
 			if !hasContent {
 				if lastTagName != currentTagName {
 					if !startTagClosed {
@@ -721,18 +726,100 @@ func PagerPrint(reader io.Reader, writer io.Writer, pager string) error {
 	return cmd.Run()
 }
 
-func getTokenFullName(name xml.Name, nsAliases map[string]string) string {
-	result := name.Local
-	if name.Space != "" {
-		space := name.Space
-		if alias, ok := nsAliases[space]; ok {
-			space = alias
-		}
-		if space != "" {
-			result = space + ":" + name.Local
+// nsBinding is a namespace declaration: xmlns:prefix="uri", or xmlns="uri" with an empty prefix.
+type nsBinding struct {
+	prefix, uri string
+}
+
+// nsScopes has the namespace declarations in scope: the predeclared xml prefix, then those of
+// each open element.
+type nsScopes struct {
+	// frames has the declarations of each scope, outermost first.
+	frames [][]nsBinding
+	// uris has, for each prefix, the URIs it is bound to, outermost first.
+	uris map[string][]string
+	// prefixes has, for each URI, the prefixes bound to it, outermost first.
+	prefixes map[string][]string
+}
+
+func newNsScopes() *nsScopes {
+	s := &nsScopes{uris: map[string][]string{}, prefixes: map[string][]string{}}
+	s.push([]nsBinding{{prefix: "xml", uri: "http://www.w3.org/XML/1998/namespace"}})
+	return s
+}
+
+// push adds the declarations of an element being opened.
+func (s *nsScopes) push(bindings []nsBinding) {
+	s.frames = append(s.frames, bindings)
+	for _, b := range bindings {
+		s.uris[b.prefix] = append(s.uris[b.prefix], b.uri)
+		s.prefixes[b.uri] = append(s.prefixes[b.uri], b.prefix)
+	}
+}
+
+// pop removes the declarations of the innermost open element, but never the predeclared ones.
+func (s *nsScopes) pop() {
+	if len(s.frames) <= 1 {
+		return
+	}
+	bindings := s.frames[len(s.frames)-1]
+	s.frames = s.frames[:len(s.frames)-1]
+	for i := len(bindings) - 1; i >= 0; i-- {
+		b := bindings[i]
+		dropLast(s.uris, b.prefix)
+		dropLast(s.prefixes, b.uri)
+	}
+}
+
+// dropLast removes the last value listed under key, and the key once it has none.
+func dropLast(m map[string][]string, key string) {
+	if values := m[key]; len(values) > 1 {
+		m[key] = values[:len(values)-1]
+	} else {
+		delete(m, key)
+	}
+}
+
+// lookup returns the namespace URI that prefix is bound to in the current scope, or "" if none.
+func (s *nsScopes) lookup(prefix string) string {
+	if uris := s.uris[prefix]; len(uris) > 0 {
+		return uris[len(uris)-1]
+	}
+	return ""
+}
+
+// elementName returns name without a prefix if it is in the default namespace, else as
+// prefixedName does.
+func (s *nsScopes) elementName(name xml.Name) string {
+	if s.lookup("") == name.Space {
+		return name.Local
+	}
+	return s.prefixedName(name)
+}
+
+// attrName returns name as prefixedName does, but keeps the xmlns prefix of a namespace
+// declaration, which the decoder reports in namespace xmlns. A default namespace never applies to
+// attributes.
+func (s *nsScopes) attrName(name xml.Name) string {
+	if name.Space == "xmlns" {
+		return "xmlns:" + name.Local
+	}
+	return s.prefixedName(name)
+}
+
+// prefixedName returns name with the outermost prefix bound to its namespace, or else with the
+// namespace as the prefix, which keeps an undeclared prefix: the decoder reports it as the
+// namespace.
+func (s *nsScopes) prefixedName(name xml.Name) string {
+	if name.Space == "" {
+		return name.Local
+	}
+	for _, prefix := range s.prefixes[name.Space] {
+		if prefix != "" && s.lookup(prefix) == name.Space {
+			return prefix + ":" + name.Local
 		}
 	}
-	return result
+	return name.Space + ":" + name.Local
 }
 
 func getSelfClosingTags() map[string]bool {
