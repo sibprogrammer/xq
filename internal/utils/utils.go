@@ -147,8 +147,7 @@ func FormatXml(reader io.Reader, writer io.Writer, indent string, colors int) er
 			}
 			var attrs []string
 			attrsLength := 0
-			// Register all namespace declarations first: an attribute may use a prefix declared
-			// later in the same tag.
+			// A name may use a prefix declared later in its tag, so push the declarations first.
 			var bindings []nsBinding
 			for _, attr := range typedToken.Attr {
 				if attr.Name.Space == "xmlns" {
@@ -732,12 +731,12 @@ type nsBinding struct {
 	prefix, uri string
 }
 
-// nsScopes holds the namespace declarations of each open element, after the predeclared xml
-// prefix, indexed both ways.
+// nsScopes has the namespace declarations in scope: the predeclared xml prefix, then those of
+// each open element.
 type nsScopes struct {
-	// frames has the declarations of each open element, outermost first.
+	// frames has the declarations of each scope, outermost first.
 	frames [][]nsBinding
-	// uris has, for each prefix, the URIs it is bound to, innermost last.
+	// uris has, for each prefix, the URIs it is bound to, outermost first.
 	uris map[string][]string
 	// prefixes has, for each URI, the prefixes bound to it, outermost first.
 	prefixes map[string][]string
@@ -789,8 +788,8 @@ func (s *nsScopes) lookup(prefix string) string {
 	return ""
 }
 
-// elementName returns an element name with no prefix if its namespace is the default one in the
-// current scope, else as prefixedName does.
+// elementName returns name without a prefix if it is in the default namespace, else as
+// prefixedName does.
 func (s *nsScopes) elementName(name xml.Name) string {
 	if s.lookup("") == name.Space {
 		return name.Local
@@ -798,11 +797,9 @@ func (s *nsScopes) elementName(name xml.Name) string {
 	return s.prefixedName(name)
 }
 
-// attrName returns an attribute name as prefixedName does, except that an xmlns:prefix
-// declaration, which the decoder gives the namespace xmlns, keeps that prefix. So does an attribute
-// whose prefix is bound to the namespace name xmlns (a deprecated relative URI reference), which
-// the decoder reports identically. A default namespace applies only to element names, never to
-// attributes, so an unprefixed attribute has no namespace.
+// attrName returns name as prefixedName does, but keeps the xmlns prefix of a namespace
+// declaration, which the decoder reports in namespace xmlns. A default namespace never applies to
+// attributes.
 func (s *nsScopes) attrName(name xml.Name) string {
 	if name.Space == "xmlns" {
 		return "xmlns:" + name.Local
@@ -810,9 +807,9 @@ func (s *nsScopes) attrName(name xml.Name) string {
 	return s.prefixedName(name)
 }
 
-// prefixedName returns name with the outermost prefix bound to its namespace in the current scope.
-// A namespace with no such prefix is written out as is: the decoder gives an unbound prefix as its
-// own namespace.
+// prefixedName returns name with the outermost prefix bound to its namespace, or else with the
+// namespace as the prefix, which keeps an undeclared prefix: the decoder reports it as the
+// namespace.
 func (s *nsScopes) prefixedName(name xml.Name) string {
 	if name.Space == "" {
 		return name.Local
